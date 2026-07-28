@@ -1,0 +1,11 @@
+# Clean URLs for the marketing pages
+/for-family    /for-family.html    200
+/family        /for-family.html    200
+/demo          /demo.html          200
+/demo-social   /demo-social.html   200
+/flyer         /flyer.html         200
+/pilot         /pilot.html         200
+/loi           /loi.html           200
+
+# Root serves the app
+/    /TotaVivo%20V7.html    200

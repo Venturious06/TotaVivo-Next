@@ -1,0 +1,8 @@
+{
+  "name": "tota-group-life-companion",
+  "private": true,
+  "version": "8.3.0",
+  "scripts": {
+    "test": "node tests/smoke-test.js && node tests/core-modules-test.js && node tests/build-8.3-test.js"
+  }
+}

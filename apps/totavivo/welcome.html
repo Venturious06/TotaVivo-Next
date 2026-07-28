@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TotaVivo™ — The App Seniors Actually Love</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<meta name="theme-color" content="#0e2e5f">
+<meta name="description" content="TotaVivo is a free senior-friendly app that handles phone, meds, safety, smart home, and earning — all in one place. No account needed. Works on any smartphone.">
+<meta property="og:title" content="TotaVivo™ — The App Seniors Actually Love">
+<meta property="og:description" content="One free app that handles everything an older adult needs. Big buttons, read-aloud, fall detection, med reminders, and a way to earn a little extra.">
+<meta property="og:image" content="./icon-512.png">
+<meta property="og:url" content="https://totavivo.com">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "a181f81f06de4c97a33bac96ab2b3f5c"}'></script>
+<!-- End Cloudflare Web Analytics -->
+<style>
+:root{
+  --deep:#0e2e5f;--mid:#2256a6;--teal:#3ab5cf;--teal2:#46d4e0;
+  --gold:#e7b14a;--goldb:#ffd770;--gold-deep:#a06e1c;
+  --ink:#10324f;--sub:#5a6f88;--line:#dce6f2;
+  --green:#0a8a50;--red:#c0244a;
+  --bg:#f4f8fc;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(14,46,95,.97);backdrop-filter:blur(10px);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{color:#fff;font-weight:900;font-size:20px;letter-spacing:.3px;text-decoration:none;}
+.nav-logo sup{font-size:10px;color:var(--goldb);vertical-align:super;}
+.nav-links{display:flex;align-items:center;gap:16px;}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:600;transition:color .2s;}
+.nav-links a:hover{color:#fff;}
+.nav-cta{background:linear-gradient(135deg,var(--gold),var(--goldb));color:var(--deep) !important;font-weight:900 !important;padding:8px 18px;border-radius:10px;font-size:13px !important;}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(150deg,#0a1e3d,#0e2e5f 40%,#155a72 70%,#082338);color:#fff;padding:70px 20px 80px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(58,181,207,.15),transparent 70%);pointer-events:none;}
+.hero-badge{display:inline-block;background:rgba(231,177,74,.15);border:1px solid rgba(255,215,112,.4);color:var(--goldb);font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px;}
+.hero h1{font-size:clamp(32px,6vw,58px);font-weight:900;line-height:1.15;margin-bottom:16px;letter-spacing:-.5px;}
+.hero h1 span{color:var(--goldb);}
+.hero .sub{font-size:clamp(16px,2.5vw,20px);color:rgba(255,255,255,.8);max-width:620px;margin:0 auto 36px;line-height:1.55;}
+.hero-btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:48px;}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--goldb));color:var(--deep);font-weight:900;font-size:17px;text-decoration:none;padding:16px 34px;border-radius:14px;box-shadow:0 6px 24px rgba(231,177,74,.4);transition:transform .15s,box-shadow .15s;display:inline-block;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(231,177,74,.5);}
+.btn-secondary{background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:16px;text-decoration:none;padding:16px 34px;border-radius:14px;border:1.5px solid rgba(255,255,255,.3);transition:background .2s;display:inline-block;}
+.btn-secondary:hover{background:rgba(255,255,255,.18);}
+.hero-note{font-size:13px;color:rgba(255,255,255,.55);margin-top:8px;}
+
+/* Phone mockup */
+.hero-phones{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:20px;}
+.phone-pill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 20px;font-size:13px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:8px;}
+.phone-pill .ico{font-size:20px;}
+
+/* ── TRUST BAR ── */
+.trust-bar{background:#fff;border-bottom:1px solid var(--line);padding:16px 20px;text-align:center;}
+.trust-bar-inner{max-width:860px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:24px 40px;align-items:center;}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--sub);}
+.trust-item .ico{font-size:18px;}
+
+/* ── SECTIONS ── */
+.section{padding:64px 20px;}
+.section.alt{background:#fff;}
+.section-inner{max-width:980px;margin:0 auto;}
+.section-label{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal);margin-bottom:10px;}
+.section h2{font-size:clamp(24px,4vw,36px);font-weight:900;color:var(--deep);margin-bottom:14px;line-height:1.2;}
+.section .lead{font-size:17px;color:var(--sub);max-width:580px;margin-bottom:40px;line-height:1.6;}
+
+/* Feature grid */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+.feat-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 24px;box-shadow:0 2px 8px rgba(20,40,70,.05),0 8px 24px rgba(20,40,70,.04);transition:transform .15s,box-shadow .15s;}
+.feat-card:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(20,40,70,.1);}
+.feat-card .feat-ico{font-size:32px;margin-bottom:12px;}
+.feat-card h3{font-size:17px;font-weight:900;color:var(--deep);margin-bottom:6px;}
+.feat-card p{font-size:14px;color:var(--sub);line-height:1.55;}
+.feat-card.gold{border-color:var(--gold);background:linear-gradient(180deg,#fffdf5,#fff);}
+.feat-card.gold h3{color:var(--gold-deep);}
+
+/* ── HOW IT WORKS ── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:40px;}
+.step{text-align:center;padding:24px 20px;}
+.step-num{width:48px;height:48px;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:50%;color:#fff;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.step h3{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:8px;}
+.step p{font-size:14px;color:var(--sub);}
+
+/* ── FOR DOCTORS ── */
+.doctor-section{background:linear-gradient(150deg,#0e2e5f,#155a72);color:#fff;padding:64px 20px;text-align:center;}
+.doctor-section h2{font-size:clamp(24px,4vw,34px);font-weight:900;margin-bottom:14px;}
+.doctor-section .lead{font-size:17px;color:rgba(255,255,255,.8);max-width:560px;margin:0 auto 36px;line-height:1.6;}
+.doctor-points{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:800px;margin:0 auto 40px;text-align:left;}
+.doctor-point{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start;}
+.doctor-point .ico{font-size:22px;flex-shrink:0;margin-top:2px;}
+.doctor-point p{font-size:14px;color:rgba(255,255,255,.85);line-height:1.5;}
+.doctor-point strong{color:#fff;display:block;margin-bottom:4px;font-size:14px;}
+.btn-white{background:#fff;color:var(--deep);font-weight:900;font-size:16px;text-decoration:none;padding:15px 32px;border-radius:13px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:transform .15s;}
+.btn-white:hover{transform:translateY(-2px);}
+
+/* ── EMAIL CAPTURE ── */
+.capture-section{background:linear-gradient(135deg,#f0f7ff,#e6f3fb);padding:64px 20px;text-align:center;border-top:1px solid var(--line);}
+.capture-section h2{font-size:clamp(22px,4vw,32px);font-weight:900;color:var(--deep);margin-bottom:10px;}
+.capture-section .lead{font-size:16px;color:var(--sub);max-width:500px;margin:0 auto 32px;}
+.capture-form{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:520px;margin:0 auto;}
+.capture-form input[type="email"]{flex:1;min-width:220px;padding:14px 18px;border:2px solid var(--line);border-radius:12px;font-size:15px;color:var(--ink);background:#fff;outline:none;transition:border-color .2s;}
+.capture-form input[type="email"]:focus{border-color:var(--teal);}
+.capture-form select{flex:1;min-width:180px;padding:14px 18px;border:2px solid var(--line);border-radius:12px;font-size:15px;color:var(--ink);background:#fff;outline:none;cursor:pointer;}
+.capture-form button{background:linear-gradient(135deg,var(--deep),var(--mid));color:#fff;font-weight:900;font-size:15px;padding:14px 28px;border:none;border-radius:12px;cursor:pointer;transition:transform .15s,box-shadow .15s;white-space:nowrap;}
+.capture-form button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(14,46,95,.3);}
+.capture-note{font-size:12px;color:var(--sub);margin-top:12px;}
+.capture-success{display:none;background:#eaf7ef;border:1px solid #bfe6cd;border-radius:14px;padding:18px 24px;max-width:480px;margin:0 auto;color:#1a5c34;font-weight:700;font-size:15px;}
+
+/* ── TESTIMONIAL / QUOTE ── */
+.quote-section{padding:60px 20px;text-align:center;background:#fff;}
+.quote-inner{max-width:700px;margin:0 auto;}
+.quote-block{background:linear-gradient(135deg,#f0f7ff,#e6f4fb);border-left:5px solid var(--teal);border-radius:0 16px 16px 0;padding:24px 28px;text-align:left;margin-bottom:16px;}
+.quote-block p{font-size:18px;color:var(--deep);font-style:italic;line-height:1.6;font-weight:500;}
+.quote-attr{font-size:13px;color:var(--sub);font-weight:700;}
+
+/* ── FOOTER ── */
+footer{background:var(--deep);color:rgba(255,255,255,.7);padding:40px 20px;text-align:center;}
+.footer-inner{max-width:780px;margin:0 auto;}
+.footer-logo{color:#fff;font-size:22px;font-weight:900;margin-bottom:16px;}
+.footer-logo sup{font-size:11px;color:var(--goldb);vertical-align:super;}
+.footer-links{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 24px;margin-bottom:20px;}
+.footer-links a{color:rgba(255,255,255,.6);text-decoration:none;font-size:13px;font-weight:600;transition:color .2s;}
+.footer-links a:hover{color:#fff;}
+.footer-copy{font-size:12px;color:rgba(255,255,255,.4);line-height:1.8;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .nav-links .hide-mobile{display:none;}
+  .hero{padding:50px 18px 60px;}
+  .capture-form{flex-direction:column;}
+  .capture-form input,.capture-form select,.capture-form button{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">TotaVivo<sup>™</sup></a>
+  <div class="nav-links">
+    <a href="./features.html" class="hide-mobile">Features</a>
+    <a href="#how-it-works" class="hide-mobile">How It Works</a>
+    <a href="#for-doctors" class="hide-mobile">For Doctors</a>
+    <a href="./TotaVivo%20V7.html" class="nav-cta">Try Free →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">Now in Closed Beta · Doctors Testing Now</div>
+  <h1>The app seniors<br><span>actually want to use.</span></h1>
+  <p class="sub">One free app that handles everything — calls, medications, fall detection, smart home, and a way to earn a little extra. Big buttons, read-aloud, works on any phone. No account. No tech support needed.</p>
+  <div class="hero-btns">
+    <a href="./TotaVivo%20V7.html" class="btn-primary">▶ Try TotaVivo Free</a>
+    <a href="./features.html" class="btn-secondary">See All Features</a>
+  </div>
+  <p class="hero-note">Works on any iPhone or Android · No download required · Free for the senior, always — not a trial</p>
+  <div class="hero-phones">
+    <div class="phone-pill"><span class="ico">📱</span> iPhone (Safari)</div>
+    <div class="phone-pill"><span class="ico">🤖</span> Android (Chrome)</div>
+    <div class="phone-pill"><span class="ico">🔒</span> No account needed</div>
+    <div class="phone-pill"><span class="ico">📶</span> Works offline</div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-bar-inner">
+    <div class="trust-item"><span class="ico">🩺</span> Tested by geriatricians</div>
+    <div class="trust-item"><span class="ico">🔒</span> All data stays on your device</div>
+    <div class="trust-item"><span class="ico">🆓</span> Free forever — no credit card</div>
+    <div class="trust-item"><span class="ico">📵</span> No account · No password</div>
+    <div class="trust-item"><span class="ico">⚡</span> Opens with no signal</div>
+  </div>
+</div>
+
+<!-- HONEST ANSWERS -->
+<div style="background:#f4f8fc;border-bottom:1px solid var(--line);padding:22px 20px;">
+  <div style="max-width:680px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div>
+      <div style="font-size:12.5px;font-weight:900;color:var(--deep);margin-bottom:4px;">Why is it free?</div>
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.5;">Free for the person using it — always, not just during this beta. Support comes from an optional plan we're building for caregivers who want more, and future healthcare partnerships. Never ads, never selling your data.</div>
+    </div>
+    <div>
+      <div style="font-size:12.5px;font-weight:900;color:var(--deep);margin-bottom:4px;">What does "works offline" mean?</div>
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.5;">The app opens instantly and your contacts, medications, and settings are always there, even with no signal. Actual phone calls, video calls, and smart home control still need a connection, same as any phone.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section alt" id="features">
+  <div class="section-inner">
+    <div class="section-label">Everything in one place</div>
+    <h2>Built for older adults.<br>Loved by their families.</h2>
+    <p class="lead">TotaVivo replaces 6 different apps with one simple, beautiful interface designed for aging hands and eyes.</p>
+    <div class="feat-grid">
+
+      <div class="feat-card">
+        <div class="feat-ico">🆘</div>
+        <h3>Safety First</h3>
+        <p>Fall detection with automatic escalation. 911 Find-Me Beacon with flashing lights and siren so help can find you — inside or outside.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">💊</div>
+        <h3>Medication Reminders</h3>
+        <p>Scan any pill bottle barcode to add medications instantly. Reminders, refill tracking, and FDA drug info — all read aloud.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">📞</div>
+        <h3>Phone & Video Calls</h3>
+        <p>One-tap favorites, a big dial pad, and video calling through FaceTime, Zoom, Meet, or WhatsApp — whichever the family uses.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">♿</div>
+        <h3>Designed for Aging</h3>
+        <p>Steady Touch ignores accidental double-taps. Read-aloud for everything. Big text, color-vision filters, and gentle confirmation delays.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">🏠</div>
+        <h3>Smart Home</h3>
+        <p>Control lights, locks, thermostat, and scenes in one tap. Automatically unlocks the door and turns on lights if a fall is detected.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">👨‍👩‍👧</div>
+        <h3>Caregiver Dashboard</h3>
+        <p>Family members can see activity summaries and earnings — but never private messages, call history, or the ability to withdraw funds.</p>
+      </div>
+
+      <div class="feat-card gold">
+        <div class="feat-ico">💰</div>
+        <h3>Earn While You Use It</h3>
+        <p>Optional daily check-ins, surveys, brain quizzes, and AI training tasks pay small rewards. Senior voices are in high demand — get paid for yours.</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-ico">🔍</div>
+        <h3>Search Everything</h3>
+        <p>One gold search bar at the top of every screen. Find a contact, a medicine, a screen, or search the web — without opening a browser.</p>
+      </div>
+
+    </div>
+    <div style="text-align:center;margin-top:28px;">
+      <a href="./features.html" style="color:var(--teal);font-weight:800;font-size:15px;text-decoration:none;">See the complete feature list →</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-label">Simple setup</div>
+    <h2>Up and running in 3 taps.</h2>
+    <p class="lead" style="margin:0 auto 10px;">No app store. No account. No tech support call.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Open the link</h3>
+        <p>Visit totavivo.com on any iPhone or Android phone. Works in Safari and Chrome.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Add to Home Screen</h3>
+        <p>Tap "Share → Add to Home Screen" (iPhone) or "Install App" (Android). Now it has its own icon.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Start using it</h3>
+        <p>Add contacts, medications, and favorites. Everything stays on the phone — private and offline.</p>
+      </div>
+    </div>
+    <div style="margin-top:36px;">
+      <a href="./TotaVivo%20V7.html" class="btn-primary" style="font-size:16px;">▶ Try It Now — It's Free</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOR DOCTORS -->
+<section class="doctor-section" id="for-doctors">
+  <div class="section-label" style="color:var(--goldb);">For Healthcare Providers</div>
+  <h2>Your patients can use this.<br>Right now. Today.</h2>
+  <p class="lead">TotaVivo was designed with doctors and tested by geriatricians. No HIPAA concerns — all data stays on the patient's device, nothing goes to a server.</p>
+  <div class="doctor-points">
+    <div class="doctor-point">
+      <span class="ico">🔒</span>
+      <div><strong>No PHI created or stored</strong><p>Everything is on the patient's device. No server, no account, no database. Nothing to breach.</p></div>
+    </div>
+    <div class="doctor-point">
+      <span class="ico">💊</span>
+      <div><strong>Medication adherence</strong><p>Reminders, adherence tracking, and FDA drug lookups — all read aloud for low-literacy or vision-impaired patients.</p></div>
+    </div>
+    <div class="doctor-point">
+      <span class="ico">🆘</span>
+      <div><strong>Fall detection + 911</strong><p>DeviceMotion fall detection with automatic escalation. The 1-hour-to-help window is the biggest predictor of recovery.</p></div>
+    </div>
+    <div class="doctor-point">
+      <span class="ico">👁</span>
+      <div><strong>Caregiver oversight</strong><p>Assign a family member to see activity summaries. They get fewer panic calls, patients get more independence.</p></div>
+    </div>
+  </div>
+  <a href="mailto:randy@totavivo.com?subject=Doctor Beta Request" class="btn-white">Request a Doctor Demo →</a>
+  <p style="font-size:13px;color:rgba(255,255,255,.5);margin-top:14px;">Or open <a href="./features.html" style="color:var(--goldb);font-weight:700;">the feature guide</a> to review before your demo.</p>
+</section>
+
+<!-- QUOTE -->
+<section class="quote-section">
+  <div class="quote-inner">
+    <div class="section-label" style="text-align:center;">What doctors are saying</div>
+    <h2 style="font-size:24px;font-weight:900;color:var(--deep);margin-bottom:28px;">Early beta feedback</h2>
+    <div class="quote-block">
+      <p>"The 911 beacon alone is worth it. I showed it to a patient with early Parkinson's — she was able to use it without help. That never happens."</p>
+    </div>
+    <p class="quote-attr">— Beta tester, geriatric primary care · Orlando, FL</p>
+  </div>
+</section>
+
+<!-- EMAIL CAPTURE -->
+<section class="capture-section" id="early-access">
+  <h2>Get Early Access</h2>
+  <p class="lead">Join doctors, caregivers, and seniors already testing TotaVivo. We'll notify you when new features launch and send install instructions.</p>
+
+  <form class="capture-form" id="captureForm" onsubmit="handleSignup(event)">
+    <input type="email" id="emailInput" placeholder="Your email address" required autocomplete="email">
+    <select id="roleSelect">
+      <option value="">I am a...</option>
+      <option value="senior">Senior (for myself)</option>
+      <option value="caregiver">Caregiver / Family member</option>
+      <option value="doctor">Doctor / Healthcare provider</option>
+      <option value="other">Other</option>
+    </select>
+    <button type="submit">Get Early Access →</button>
+  </form>
+  <p class="capture-note">No spam. Unsubscribe anytime. Your email is never sold or shared.</p>
+
+  <div class="capture-success" id="captureSuccess">
+    ✅ You're on the list! We'll be in touch soon. In the meantime — <a href="./TotaVivo%20V7.html" style="color:var(--teal);">try TotaVivo right now →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">TotaVivo<sup>™</sup></div>
+    <div class="footer-links">
+      <a href="./TotaVivo%20V7.html">Open the App</a>
+      <a href="./features.html">Features</a>
+      <a href="./privacy.html">Privacy Policy</a>
+      <a href="./terms.html">Terms of Service</a>
+      <a href="./disclaimer.html">Safety Disclaimer</a>
+      <a href="mailto:randy@totavivo.com">Contact</a>
+    </div>
+    <div class="footer-copy">
+      © 2026 TotaVivo™ · All Rights Reserved · Casselberry, Florida<br>
+      Long live your whole life · Made with 💙<br>
+      <span style="font-size:11px;margin-top:6px;display:block;">TotaVivo is not a medical device and does not provide medical advice. In any emergency, call 911.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Simple email capture ──
+// Submissions are logged to the browser console and stored locally.
+// To connect a real backend: replace the handleSignup function body
+// with a fetch() POST to your email service (Mailchimp, ConvertKit, Netlify Forms, etc.)
+function handleSignup(e) {
+  e.preventDefault();
+  const email = document.getElementById('emailInput').value.trim();
+  const role = document.getElementById('roleSelect').value || 'not specified';
+  if (!email) return;
+
+  // Store locally so nothing is lost even before backend is wired
+  try {
+    const leads = JSON.parse(localStorage.getItem('tv_leads') || '[]');
+    leads.push({ email, role, date: new Date().toISOString() });
+    localStorage.setItem('tv_leads', JSON.stringify(leads));
+  } catch(err) {}
+
+  // Show success state
+  document.getElementById('captureForm').style.display = 'none';
+  const success = document.getElementById('captureSuccess');
+  success.style.display = 'block';
+
+  // Log for debugging
+  console.log('TotaVivo signup:', email, role);
+}
+</script>
+
+</body>
+</html>

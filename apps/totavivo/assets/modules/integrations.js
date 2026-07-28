@@ -1,0 +1,13 @@
+(function(g){'use strict';
+var KEY='totavivo_integrations_v1',state={bankProvider:null,bankConnected:false,lastSync:null,paymentMode:'send'};
+function load(){try{Object.assign(state,JSON.parse((g.TotaStorage&&TotaStorage.getItem(KEY))||'{}'));}catch(e){}}
+function save(){try{if(g.TotaStorage)TotaStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function sheet(id,on){var el=document.getElementById(id);if(el)el.classList.toggle('open',!!on);}
+function restoreStatus(){load();var el=document.getElementById('bank-connection-status');if(el){el.textContent=state.bankConnected?'Connected through '+state.bankProvider+' · Last synced '+(state.lastSync||'not yet'):'Not connected · Demo ledger active';el.style.color=state.bankConnected?'var(--green)':'var(--yellow)';}}
+g.openBankConnection=function(){sheet('bank-connect-sheet',true)};
+g.closeIntegrationSheet=function(id){sheet(id,false)};
+g.chooseBankProvider=function(name){state.bankProvider=name;state.bankConnected=true;state.lastSync=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});save();sheet('bank-connect-sheet',false);restoreStatus();showToast('✅ '+name+' sandbox connection selected');speak('Bank connection setup is ready. Live access needs secure provider credentials.');};
+g.syncBankNow=function(){if(!state.bankConnected){openBankConnection();return;}state.lastSync=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});save();restoreStatus();if(typeof renderBalanceTiles==='function')renderBalanceTiles();if(typeof renderMoneyScreens==='function')renderMoneyScreens();showToast('🔄 Ledger refreshed · '+state.lastSync);};
+g.openPaymentHandoff=function(mode){state.paymentMode=mode||'send';var t=document.getElementById('payment-sheet-title');if(t)t.textContent=(state.paymentMode==='request'?'Request Money':'Send Money')+' — Choose Provider';sheet('payment-sheet',true);};
+g.launchPaymentProvider=function(provider){var a=parseFloat((document.getElementById('payment-amount')||{}).value||'0');if(!(a>0)){showToast('Enter an amount first');return;}sheet('payment-sheet',false);var action=state.paymentMode==='request'?'request':'send';showToast('Opening '+provider+' to '+action+' '+a.toLocaleString('en-US',{style:'currency',currency:'USD'}));speak('Review the recipient and amount in '+provider+' before approving.');var urls={Venmo:'https://venmo.com/',Zelle:'https://www.zellepay.com/get-started',PayPal:'https://www.paypal.com/', 'Cash App':'https://cash.app/'};setTimeout(function(){try{window.open(urls[provider],'_blank','noopener');}catch(e){}},500);};
+g.TotaIntegrations={state:state,restoreStatus:restoreStatus};load();})(window);
