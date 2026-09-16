@@ -3836,7 +3836,7 @@ function applyBackground(){
   currentStyle.__bg2=currentBg2;
   currentStyle.__bgDir=currentBgDir;
 }
-function setBtnShape(shape){currentShape=shape;document.body.classList.remove('shape-square','shape-rounded','shape-pill');if(shape!=='rounded')document.body.classList.add('shape-'+shape);document.querySelectorAll('#sl-shape-grp .sl-shape-btn').forEach(b=>b.classList.toggle('active',b.dataset.shape===shape));markUnsaved();}
+function setBtnShape(shape){currentShape=shape;document.body.classList.remove('shape-square','shape-rounded','shape-pill');document.body.classList.add('shape-'+shape);document.querySelectorAll('#sl-shape-grp .sl-shape-btn').forEach(b=>b.classList.toggle('active',b.dataset.shape===shape));markUnsaved();}
 function setBorderWeight(bw){currentBW=bw;document.body.classList.remove('bw-thin','bw-thick');if(bw!=='normal')document.body.classList.add('bw-'+bw);document.querySelectorAll('#sl-bw-grp .sl-shape-btn').forEach(b=>b.classList.toggle('active',b.dataset.bw===bw));markUnsaved();}
 
 function updatePreview(){var tile=document.getElementById('sl-pv-tile');if(tile&&!tile.querySelector('svg'))tile.innerHTML=SVG_PHONE_CALL_IN;}
@@ -3874,7 +3874,7 @@ function applySnapshot(snap){
     });
   }
   currentShape=snap.shape||'rounded';
-  if(currentShape!=='rounded')document.body.classList.add('shape-'+currentShape);
+  document.body.classList.add('shape-'+currentShape);
   document.querySelectorAll('#sl-shape-grp .sl-shape-btn').forEach(b=>b.classList.toggle('active',b.dataset.shape===currentShape));
   currentBW=snap.bw||'normal';
   if(currentBW!=='normal')document.body.classList.add('bw-'+currentBW);
@@ -3898,7 +3898,7 @@ function loadStyle(){
 function resetStyle(){
   Object.keys(styleDefaults).forEach(k=>{document.documentElement.style.removeProperty(k);var pid=pickerMap[k];if(pid){var el=document.getElementById(pid);if(el)el.value=styleDefaults[k];}});
   currentStyle={};currentShape='rounded';currentBW='normal';currentBg1='#1a0035';currentBg2='#04001a';currentBgDir='radial';
-  document.body.classList.remove('shape-square','shape-rounded','shape-pill','bw-thin','bw-thick');
+  document.body.classList.remove('shape-square','shape-rounded','shape-pill','bw-thin','bw-thick');document.body.classList.add('shape-rounded');
   document.body.style.removeProperty('--page-bg');
   var b1=document.getElementById('sl-bg1');if(b1)b1.value='#1a0035';
   var b2=document.getElementById('sl-bg2');if(b2)b2.value='#04001a';

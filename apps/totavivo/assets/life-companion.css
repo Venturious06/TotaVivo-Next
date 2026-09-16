@@ -865,19 +865,16 @@ body.big-text .screen{zoom:1.18;}
 .sl-pv-btn{padding:8px 14px;font-size:11px;font-weight:800;border:var(--border-weight) solid var(--a2);background:rgba(0,194,255,.18);color:var(--a2);border-radius:var(--user-radius,13px);cursor:pointer;}
 .sl-pv-pill{padding:6px 12px;font-size:10px;font-weight:800;border:var(--border-weight) solid var(--green);background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green);border-radius:var(--user-radius,14px);cursor:pointer;}
 
-/* Body-class shape overrides — apply globally */
-body.shape-square .bb,body.shape-square .pbtn,body.shape-square .abtn,body.shape-square .card,body.shape-square .app-tile,body.shape-square .cact,body.shape-square .efbtn,body.shape-square .acchip,body.shape-square .sync-btn,body.shape-square .csync-btn,body.shape-square .cal-day,body.shape-square .sl-shape-btn,body.shape-square .nbtn,body.shape-square .sh-rtab,body.shape-square .sh-scene,body.shape-square .sh-lock,body.shape-square .sh-lock-btn,body.shape-square .ift-applet,body.shape-square .ift-arun,body.shape-square .bt-scan-btn,body.shape-square .bt-stop-btn,body.shape-square .bt-dbtn,body.shape-square .form-inp,body.shape-square .app-search,body.shape-square .contact-search,body.shape-square .email-search,body.shape-square .compose-inp{border-radius:4px !important;}
-body.shape-pill .bb,body.shape-pill .pbtn,body.shape-pill .abtn,body.shape-pill .cact,body.shape-pill .efbtn,body.shape-pill .acchip,body.shape-pill .sync-btn,body.shape-pill .csync-btn,body.shape-pill .sl-shape-btn,body.shape-pill .sh-rtab,body.shape-pill .sh-lock-btn,body.shape-pill .ift-arun,body.shape-pill .bt-scan-btn,body.shape-pill .bt-stop-btn,body.shape-pill .bt-dbtn{border-radius:999px !important;}
-body.shape-rounded .bb,body.shape-rounded .pbtn,body.shape-rounded .card{border-radius:18px !important;}
-body.shape-rounded .app-tile,body.shape-rounded .sh-scene{border-radius:20px !important;}
-/* Shape choice also drives --user-radius so the Style Lab Live Preview visibly changes the instant Square/Rounded/Pill is tapped */
-body.shape-square{--user-radius:4px;}
-body.shape-rounded{--user-radius:18px;}
-body.shape-pill{--user-radius:999px;}
+/* One interface-shape system. Controls and panels move together; true circles remain circles. */
+body.shape-square{--user-radius:4px;--shape-control-radius:4px;--shape-panel-radius:4px;}
+body.shape-rounded{--user-radius:16px;--shape-control-radius:14px;--shape-panel-radius:16px;}
+body.shape-pill{--user-radius:999px;--shape-control-radius:999px;--shape-panel-radius:24px;}
+body:is(.shape-square,.shape-rounded,.shape-pill) .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.tv-search,.abtn,.nbtn,.badge,.acchip,.sync-btn,.csync-btn,.sh-rtab,.tog){border-radius:var(--shape-control-radius) !important;}
+body:is(.shape-square,.shape-rounded,.shape-pill) .phone-shell :is(.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search-results){border-radius:var(--shape-panel-radius) !important;}
 
 /* Global border-weight override */
-body.bw-thin :is(.card,.app-tile,.bb,.pbtn,.cact,.tv-search,.tv-search-btn,.abtn,.nbtn,.form-inp,.tog,.sl-shape-btn,.cf-opt,.sh-scene,.bt-scan-btn,.bt-stop-btn){border-width:1px !important;}
-body.bw-thick :is(.card,.app-tile,.bb,.pbtn,.cact,.tv-search,.tv-search-btn,.abtn,.nbtn,.form-inp,.tog,.sl-shape-btn,.cf-opt,.sh-scene,.bt-scan-btn,.bt-stop-btn){border-width:3px !important;}
+body.bw-thin .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search,.tv-search-results,.tog){border-width:1px !important;}
+body.bw-thick .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search,.tv-search-results,.tog){border-width:3px !important;}
 
 :is(button,.app-tile,.nbtn,.ht,.cact,.sh-scene):is(:hover,:focus-visible) :is(.at-icon,.ni,.ht-i,.alic,.mic,.cpi,.w-icon){animation:iconFourAxis .7s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d;}
 @media (prefers-reduced-motion:reduce){:is(button,.app-tile,.nbtn,.ht,.cact,.sh-scene):is(:hover,:focus-visible) :is(.at-icon,.ni,.ht-i,.alic,.mic,.cpi,.w-icon),.logo-icon:hover img,.logo-icon:hover svg{animation:none !important;}}
