@@ -2962,7 +2962,15 @@ function flashTremorPad(blocked){
 function resetTremorPad(){tremorStats.counted=0;tremorStats.blocked=0;var s=document.getElementById('tremor-stats');if(s){s.textContent='Taps counted: 0 · Shakes ignored: 0';s.style.color='var(--text)';}}
 
 // ═══ THEME ═══
-function setTheme(n,tid){document.body.className=n+(document.body.classList.contains('web-mode')?' web-mode':'');document.querySelectorAll('.thm-tile').forEach(t=>t.classList.remove('active'));document.getElementById(tid).classList.add('active');showToast('Theme updated!');showSyncIndicator();}
+function setTheme(n,tid){
+  document.body.classList.remove('deep','light','warm','cb');
+  if(n) document.body.classList.add(n);
+  document.querySelectorAll('.thm-tile').forEach(t=>t.classList.remove('active'));
+  var tile=document.getElementById(tid);
+  if(tile) tile.classList.add('active');
+  showToast('Theme updated!');
+  showSyncIndicator();
+}
 
 // ═══ UPDATE ═══
 var UPD_DISMISS_KEY='totavivo_upd_dismissed';
