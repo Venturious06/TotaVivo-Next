@@ -30,7 +30,7 @@
 <link href="assets/life-companion.css" rel="stylesheet"/>
 <meta content="TotaVivo Life Companion" name="application-name"/>
 <meta content="totavivo-life-companion" name="tota-group-module"/>
-<meta content="8.3.0" name="tota-group-version"/>
+<meta content="8.3.2" name="tota-group-version"/>
 </head>
 <body class="deep shape-rounded">
 <a aria-label="Open Tota Group" href="../../index.html" style="position:fixed;left:8px;bottom:8px;z-index:9998;text-decoration:none;background:rgba(14,46,95,.88);color:#ffd770;border:1px solid #e7b14a;border-radius:999px;padding:5px 9px;font:800 10px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;backdrop-filter:blur(8px)" title="Tota Group">Tota Group</a>
@@ -473,8 +473,8 @@
 <div class="at" style="display:flex;justify-content:space-between;align-items:center">💳 New Payee "Lucky Sweepstakes" $200<button class="screen-x" onclick="dismissHomeCard('home-sweep-card')" style="width:22px;height:22px;font-size:12px">✕</button></div>
 <div class="as2">Flagged as unusual 🚨</div>
 <div class="appr-row">
-<button class="apbtn yes" onclick="doAppr(this)"><span>✅ Approve</span></button>
-<button class="apbtn no" onclick="doAppr(this)"><span>❌ Deny</span></button>
+<button class="apbtn yes" onclick="doAppr(this,'approve')"><span>✅ Approve</span></button>
+<button class="apbtn no" onclick="doAppr(this,'deny')"><span>❌ Deny</span></button>
 </div>
 </div>
 <!-- Frequently used modules: Safety remains pinned; the rest reorder from actual use. -->
@@ -1047,6 +1047,7 @@
 </div>
 </div>
 <button class="bb gor" onclick="recordNewMessage()" style="margin-top:7px;margin-bottom:0;min-height:38px;font-size:11px"><div class="f"></div><span>🎙️ Record a New Message</span></button>
+<div class="recording-note">Recordings remain in this TotaVivo session and are used only when you choose them.</div>
 </div>
 <div class="card"><div class="ct">🔤 Text Size</div><div class="frow"><span>A</span><input class="fsl" max="135" min="90" oninput="document.body.style.fontSize=this.value+'%'" type="range" value="100"/><span style="font-size:18px">A</span></div></div>
 <div class="card"><div class="ct">☁️ Updates</div><div class="tog-row"><div><div class="tl3">Auto-install after countdown</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div><div class="tog-row"><div><div class="tl3">Show my changes in update screen</div><div class="ts2">Your saved changes appear in the update notes</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div><button class="bb gm" onclick="showUpdate()" style="margin-top:7px;margin-bottom:0"><div class="f"></div><span>☁️ Check for Updates</span></button></div>

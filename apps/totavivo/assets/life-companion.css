@@ -871,10 +871,12 @@ body.shape-rounded{--user-radius:16px;--shape-control-radius:14px;--shape-panel-
 body.shape-pill{--user-radius:999px;--shape-control-radius:999px;--shape-panel-radius:24px;}
 body:is(.shape-square,.shape-rounded,.shape-pill) .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.tv-search,.abtn,.nbtn,.badge,.acchip,.sync-btn,.csync-btn,.sh-rtab,.tog){border-radius:var(--shape-control-radius) !important;}
 body:is(.shape-square,.shape-rounded,.shape-pill) .phone-shell :is(.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search-results){border-radius:var(--shape-panel-radius) !important;}
+body:is(.shape-square,.shape-rounded,.shape-pill) .phone-shell :is(.appr-card,.recording-dialog){border-radius:var(--shape-panel-radius) !important;}
 
 /* Global border-weight override */
 body.bw-thin .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search,.tv-search-results,.tog){border-width:1px !important;}
 body.bw-thick .phone-shell :is(button:not(.logo-icon,.hdr-mic,.screen-x,.modal-x,.vcall-btn,.cam-rm,.at-remove,.at-block),input:not([type="range"],[type="color"],[type="checkbox"]),select,textarea,.card,.ds,.upd-home,.vivo-ready-card,.bc2,.app-tile,.ht,.fav-btn,.sh-scene,.sh-lock,.ift-applet,.cam-tile,.permission-choice,.cf-opt,.ih-stat,.sc,.delay-card,.fall-settings-card,.prerecord-card,.pr-msg-item,.robot-card,.sl-preview,.tv-search,.tv-search-results,.tog){border-width:3px !important;}
+button:disabled,.last-selected:disabled{box-shadow:none!important;filter:none!important;}
 
 :is(button,.app-tile,.nbtn,.ht,.cact,.sh-scene):is(:hover,:focus-visible) :is(.at-icon,.ni,.ht-i,.alic,.mic,.cpi,.w-icon){animation:iconFourAxis .7s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d;}
 @media (prefers-reduced-motion:reduce){:is(button,.app-tile,.nbtn,.ht,.cact,.sh-scene):is(:hover,:focus-visible) :is(.at-icon,.ni,.ht-i,.alic,.mic,.cpi,.w-icon),.logo-icon:hover img,.logo-icon:hover svg{animation:none !important;}}
@@ -1183,6 +1185,16 @@ body.cf-deuteranopia .phone-shell{filter:url(#cb-deuteranopia);}
 .pr-msg-play{background:rgba(0,224,150,.15);color:var(--green);border:1.5px solid rgba(0,224,150,.3);border-radius:6px;padding:4px 8px;font-size:9px;font-weight:800;cursor:pointer;}
 .pr-msg-sel{background:rgba(74,144,226,.15);color:var(--a2);border:1.5px solid rgba(74,144,226,.3);border-radius:6px;padding:4px 8px;font-size:9px;font-weight:800;cursor:pointer;}
 .pr-msg-sel.selected{background:rgba(0,224,150,.2);color:var(--green);border-color:var(--green);}
+.recording-note{font-size:8.5px;color:var(--sub);line-height:1.35;text-align:center;margin-top:6px;}
+.recording-overlay{position:absolute;inset:0;z-index:1600;background:rgba(1,5,18,.86);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:18px;}
+.recording-overlay.show{display:flex;}
+.recording-dialog{position:relative;width:100%;max-width:350px;background:var(--panel);border:2px solid var(--tv-gold);border-radius:var(--shape-panel-radius,16px);padding:22px 16px 16px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.65);}
+.recording-close{position:absolute;right:10px;top:10px;}
+.recording-icon{font-size:40px;margin-bottom:5px;}.recording-title{font-size:16px;font-weight:900;color:var(--text);}.recording-help{font-size:10px;color:var(--sub);line-height:1.45;margin:7px auto 12px;max-width:285px;}
+.recording-status{font-size:12px;font-weight:800;color:var(--a2);}.recording-time{font:900 28px/1.2 monospace;color:var(--text);margin:8px 0 12px;}
+.recording-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;}.recording-actions button{min-height:44px;padding:9px;border:1.5px solid var(--border);font-size:11px;font-weight:900;color:#fff;cursor:pointer;}
+.recording-start{background:rgba(255,92,122,.3);border-color:var(--red)!important;}.recording-stop{background:rgba(0,224,150,.22);border-color:var(--green)!important;}.recording-actions button:disabled{opacity:.42;box-shadow:none!important;cursor:not-allowed;}
+.recording-privacy{font-size:8px;color:var(--sub);margin-top:10px;}
 
 /* ROBOT/AI ASSISTANT */
 .robot-card{background:linear-gradient(135deg,rgba(0,194,255,.08),rgba(74,0,160,.08));border:1.5px solid rgba(0,194,255,.3);border-radius:12px;padding:11px;margin-bottom:7px;}

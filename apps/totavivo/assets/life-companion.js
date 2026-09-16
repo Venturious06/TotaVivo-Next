@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.1';
+var APP_VERSION='8.3.2';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -2277,7 +2277,21 @@ function doPay(btn,name,amt){
   if(typeof logEvent==='function')logEvent('bill_paid',{bill:name,amount:amt,account:acct});
 }
 function selA(chip){document.querySelectorAll('.acchip').forEach(c=>c.classList.remove('sel'));chip.classList.add('sel');showToast('✓ Paying from: '+chip.textContent.trim());}
-function doAppr(btn){var c=btn.closest('.appr-card');c.style.opacity='.4';c.querySelectorAll('button').forEach(b=>b.disabled=true);showToast('Decision saved');showSyncIndicator();}
+function doAppr(btn,decision){
+  var c=btn.closest('.appr-card');if(!c)return;
+  c.querySelectorAll('.last-selected').forEach(function(el){el.classList.remove('last-selected');});
+  if(decision==='deny'){
+    showToast('❌ Payment denied and payee removed');
+    speak('Payment denied. Lucky Sweepstakes was removed.');
+    if(typeof logEvent==='function')logEvent('unusual_payee_denied',{payee:'Lucky Sweepstakes',amount:200});
+  }else{
+    showToast('✅ Payee approved and alert cleared');
+    if(typeof logEvent==='function')logEvent('unusual_payee_approved',{payee:'Lucky Sweepstakes',amount:200});
+  }
+  dismissHomeCard('home-sweep-card');
+  setTimeout(function(){showToast(decision==='deny'?'❌ Payment denied and payee removed':'✅ Payee approved and alert cleared');},30);
+  showSyncIndicator();
+}
 
 // ═══ MESSAGES ═══
 function scoreP(q){return plib.concat(learned).filter(p=>q===''||p.toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(usage[b]||0)-(usage[a]||0)).slice(0,4);}
@@ -2591,7 +2605,46 @@ function cancelAlarm(){
 
 function addEmergencyContact(){showToast('Open Contacts to add an emergency contact, then drag to reorder');}
 
-function recordNewMessage(){speak('Recording feature is available on your real device. Tap the microphone and speak your message clearly.');showToast('🎙️ On your device: tap mic to record your message');}
+var emergencyRecorder=null,emergencyRecordStream=null,emergencyRecordChunks=[],emergencyRecordingUrl='',emergencyRecordStarted=0,emergencyRecordTimer=null;
+function ensureEmergencyRecorder(){
+  var ov=document.getElementById('emergency-recorder');if(ov)return ov;
+  ov=document.createElement('div');ov.id='emergency-recorder';ov.className='recording-overlay';
+  ov.innerHTML='<div class="recording-dialog" role="dialog" aria-modal="true" aria-labelledby="recording-title">'
+    +'<button class="modal-x recording-close" type="button" onclick="closeEmergencyRecorder()" aria-label="Close recorder">✕</button>'
+    +'<div class="recording-icon">🎙️</div><div class="recording-title" id="recording-title">Record an Emergency Message</div>'
+    +'<div class="recording-help">Speak the message TotaVivo should play to responders when you cannot speak.</div>'
+    +'<div class="recording-status" id="recording-status">Ready to record</div><div class="recording-time" id="recording-time">0:00</div>'
+    +'<div class="recording-actions"><button class="recording-start" id="recording-start" type="button" onclick="startEmergencyRecording()">● Start Recording</button>'
+    +'<button class="recording-stop" id="recording-stop" type="button" onclick="stopEmergencyRecording()" disabled>■ Stop &amp; Save</button></div>'
+    +'<div class="recording-privacy">Microphone permission is requested only when you start recording.</div></div>';
+  document.getElementById('phone').appendChild(ov);return ov;
+}
+function recordNewMessage(){var ov=ensureEmergencyRecorder();ov.classList.add('show');resetEmergencyRecorder('Ready to record');speak('Tap Start Recording, then speak your emergency message clearly.');}
+async function startEmergencyRecording(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==='undefined'){showToast('This browser cannot record audio. Open TotaVivo in Safari or Chrome.');return;}
+  if(typeof permissionPrefs!=='undefined'&&permissionPrefs.camera_mic==='never'){showToast('Microphone is set to Never Allow. Change it in Sensors and Permissions.');return;}
+  try{
+    emergencyRecordStream=await navigator.mediaDevices.getUserMedia({audio:true});emergencyRecordChunks=[];emergencyRecorder=new MediaRecorder(emergencyRecordStream);
+    emergencyRecorder.ondataavailable=function(e){if(e.data&&e.data.size)emergencyRecordChunks.push(e.data);};emergencyRecorder.onstop=finishEmergencyRecording;
+    emergencyRecorder.start();emergencyRecordStarted=Date.now();document.getElementById('recording-status').textContent='Recording now…';
+    document.getElementById('recording-start').disabled=true;document.getElementById('recording-stop').disabled=false;
+    emergencyRecordTimer=setInterval(updateEmergencyRecordTime,250);updateEmergencyRecordTime();if(typeof logEvent==='function')logEvent('emergency_recording_started');
+  }catch(e){showToast('Microphone was not available. Check TotaVivo microphone permission.');}
+}
+function updateEmergencyRecordTime(){var elapsed=Math.floor((Date.now()-emergencyRecordStarted)/1000),el=document.getElementById('recording-time');if(el)el.textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');if(elapsed>=60)stopEmergencyRecording();}
+function stopEmergencyRecording(){if(emergencyRecorder&&emergencyRecorder.state!=='inactive')emergencyRecorder.stop();}
+function finishEmergencyRecording(){
+  clearInterval(emergencyRecordTimer);emergencyRecordTimer=null;if(emergencyRecordStream){emergencyRecordStream.getTracks().forEach(function(t){t.stop();});emergencyRecordStream=null;}
+  if(!emergencyRecordChunks.length){resetEmergencyRecorder('Nothing was recorded. Please try again.');return;}
+  if(emergencyRecordingUrl)URL.revokeObjectURL(emergencyRecordingUrl);var type=(emergencyRecorder&&emergencyRecorder.mimeType)||'audio/webm';emergencyRecordingUrl=URL.createObjectURL(new Blob(emergencyRecordChunks,{type:type}));
+  var list=document.getElementById('pr-messages'),row=document.getElementById('pr-custom-message');if(!row){row=document.createElement('div');row.id='pr-custom-message';row.className='pr-msg-item';list.appendChild(row);}
+  row.innerHTML='<div class="pr-msg-text">🎙️ “My recorded emergency message”</div><button class="pr-msg-play" type="button" onclick="playEmergencyRecording()">▶ Play</button><button class="pr-msg-sel" id="prs-custom" type="button" onclick="selectCustomEmergencyRecording()">Select</button>';
+  resetEmergencyRecorder('Saved. Use Play to check your message.');closeEmergencyRecorder();showToast('✅ Emergency message recorded and saved for this session');row.scrollIntoView({block:'center',behavior:'smooth'});if(typeof logEvent==='function')logEvent('emergency_recording_saved');
+}
+function resetEmergencyRecorder(message){var status=document.getElementById('recording-status'),start=document.getElementById('recording-start'),stop=document.getElementById('recording-stop'),time=document.getElementById('recording-time');if(status)status.textContent=message||'Ready to record';if(start)start.disabled=false;if(stop)stop.disabled=true;if(time)time.textContent='0:00';}
+function closeEmergencyRecorder(){if(emergencyRecorder&&emergencyRecorder.state!=='inactive'){emergencyRecorder.onstop=null;emergencyRecorder.stop();}clearInterval(emergencyRecordTimer);emergencyRecordTimer=null;if(emergencyRecordStream){emergencyRecordStream.getTracks().forEach(function(t){t.stop();});emergencyRecordStream=null;}var ov=document.getElementById('emergency-recorder');if(ov)ov.classList.remove('show');resetEmergencyRecorder('Ready to record');}
+function playEmergencyRecording(){if(!emergencyRecordingUrl){showToast('Record a message first');return;}new Audio(emergencyRecordingUrl).play();showToast('▶ Playing your recorded message');}
+function selectCustomEmergencyRecording(){document.querySelectorAll('.pr-msg-item').forEach(function(x){x.classList.remove('active-msg');});document.querySelectorAll('.pr-msg-sel').forEach(function(x){x.classList.remove('selected');x.textContent='Select';});var row=document.getElementById('pr-custom-message'),btn=document.getElementById('prs-custom');if(row)row.classList.add('active-msg');if(btn){btn.classList.add('selected');btn.textContent='✓ Active';}showToast('✓ Your recorded emergency message is active');}
 
 // ═══ MAGNIFIER ═══
 // V7 — magnifier is genuinely camera-driven. Magnify zooms the live feed; Scan & Read runs
@@ -4466,7 +4519,7 @@ var SEL_TARGETS='button,[onclick],.nbtn,.thm-tile,.delay-opt,.acchip,.cbbl,.sug-
   var selEl=null;
   shell.addEventListener('pointerdown',function(e){
     var t=e.target.closest(SEL_TARGETS);
-    if(!t||!shell.contains(t))return;
+    if(!t||!shell.contains(t)||t.disabled)return;
     if(selEl&&selEl!==t)selEl.classList.remove('last-selected');
     selEl=t;selEl.classList.add('last-selected');
   },true);
@@ -4674,6 +4727,7 @@ var SEARCH_INDEX=[
   {ico:'🔊',label:'Voice Settings (speak, speed, volume)',kw:'voice settings speak speech read aloud volume speed pitch vivo talk sound',go:()=>openVP()},
   {ico:'🤚',label:'Steady Touch — Tremor Help',kw:'steady touch tremor shake shaky double tap practice',go:()=>{switchTab('settings');setTimeout(()=>{var c=document.getElementById('tog-tremor');if(c)c.scrollIntoView({block:'center'});},180);}},
   {ico:'🆘',label:'Fall Detection',kw:'fall detection emergency sensor sensitivity pause',go:()=>{switchTab('settings');setTimeout(()=>{var c=document.querySelector('.fall-settings-card');if(c)c.scrollIntoView({block:'start'});},180);}},
+  {ico:'🎙️',label:'Record a Pre-Recorded Emergency Message',kw:'record prerecorded pre-recorded message emergency voice audio where do i record play recorded message',go:()=>{switchTab('settings');setTimeout(()=>{var c=document.querySelector('.prerecord-card');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});recordNewMessage();},220);}},
   {ico:'🎨',label:'Appearance / Style Lab',kw:'style theme color appearance background text size',go:()=>switchTab('settings')},
   {ico:'🧩',label:'Features & Footprint (turn features off)',kw:'features turn off footprint memory hide',go:()=>switchTab('settings')},
   {ico:'🗂️',label:'Data Retention',kw:'data retention privacy records keep history',go:()=>switchTab('settings')},
@@ -4697,7 +4751,11 @@ function tvSearch(q){
   var box=document.getElementById('tv-search-results');if(!box)return;
   if(q.length<1){hideSearchResults(false);return;}
   var results=[];
-  SEARCH_INDEX.forEach(function(it){if(it.label.toLowerCase().indexOf(q)>=0||it.kw.indexOf(q)>=0)results.push({ico:it.ico,label:it.label,sub:'In TotaVivo',act:it.go});});
+  var qWords=q.split(/[^a-z0-9]+/).filter(function(w){return w.length>2&&!/^(the|and|for|where|how|does|can|with|from|into|this|that)$/.test(w);});
+  SEARCH_INDEX.forEach(function(it){
+    var hay=(it.label+' '+it.kw).toLowerCase(),wordHits=qWords.filter(function(w){return hay.indexOf(w)>=0;}).length;
+    if(it.label.toLowerCase().indexOf(q)>=0||it.kw.indexOf(q)>=0||(qWords.length&&wordHits>=Math.max(1,Math.ceil(qWords.length*.5))))results.push({ico:it.ico,label:it.label,sub:'In TotaVivo',act:it.go});
+  });
   (typeof allContacts!=='undefined'?allContacts:[]).forEach(function(c){if(c.name.toLowerCase().indexOf(q)>=0||(c.role||'').toLowerCase().indexOf(q)>=0)results.push({ico:c.avatar||'👤',label:c.name,sub:c.role||'Contact',act:function(){switchTab('contacts');setTimeout(function(){var s=document.getElementById('contact-search');if(s){s.value=c.name;filterContacts(c.name);}},160);}});});
   (typeof installedApps!=='undefined'?installedApps:[]).forEach(function(a){if((a.name||'').toLowerCase().indexOf(q)>=0)results.push({ico:(/^\s*<svg/i.test(a.icon)?'📱':a.icon),label:a.name,sub:'App',act:function(){openApp(a.id,a.name,a.url||'');}});});
   Array.prototype.forEach.call(document.querySelectorAll('#med-list .mn'),function(mn){if(mn.textContent.toLowerCase().indexOf(q)>=0)results.push({ico:'💊',label:mn.textContent,sub:'Your medication',act:function(){switchTab('medicine');}});});

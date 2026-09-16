@@ -40,7 +40,7 @@
   var session=facade(root.sessionStorage,'session');
   var migrations=[];
   var api={
-    version:'8.3.0',
+    version:'8.3.2',
     persistent:persistent,
     session:session,
     registerMigration:function(id,run){migrations.push({id:id,run:run});},
