@@ -2,7 +2,9 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.0';
+var APP_VERSION='8.3.1';
+var swRegistration=null;
+var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
 var SENIOR_NAME_KEY='totavivo_senior_name';
 var seniorName='Dorothy';
@@ -3413,7 +3415,26 @@ function finishSetupWizard(){
 function showUpdate(){document.getElementById('upd-ov').classList.add('show');startUpdCount();}
 function dismissUpdate(){document.getElementById('upd-ov').classList.remove('show');clearInterval(updTimer);showToast('⏰ Reminder set for tomorrow');}
 function startUpdCount(){clearInterval(updTimer);updTimer=setInterval(()=>{updCountdown.s--;if(updCountdown.s<0){updCountdown.s=59;updCountdown.m--;}if(updCountdown.m<0){updCountdown.m=59;updCountdown.h--;}if(updCountdown.h<0){updCountdown.h=23;updCountdown.d--;}if(updCountdown.d<0){clearInterval(updTimer);startUpdate();return;}var el=document.getElementById('ucdt');if(el)el.textContent=updCountdown.d+'d '+pad2(updCountdown.h)+':'+pad2(updCountdown.m)+':'+pad2(updCountdown.s);},1000);}
-function startUpdate(){clearInterval(updTimer);document.getElementById('upd-now').innerHTML='<span>⬇️ Downloading…</span>';document.getElementById('upd-now').disabled=true;var prog=document.getElementById('upd-prog'),bar=document.getElementById('upd-bar'),lbl=document.getElementById('upd-lbl');prog.classList.add('show');lbl.style.display='block';var pct=0;var msgs=['Downloading '+APP_VERSION+'…','Installing apps hub…','Saving your voice settings…','Syncing all devices…','Complete!'];var mi=0;var t=setInterval(()=>{pct+=Math.random()*7+3;if(pct>100)pct=100;bar.style.width=pct+'%';lbl.textContent=msgs[Math.min(mi++,4)]+' '+Math.round(pct)+'%';if(pct>=100){clearInterval(t);lbl.textContent='✅ TotaVivo '+APP_VERSION+' installed!';setTimeout(()=>{document.getElementById('upd-ov').classList.remove('show');showToast('✅ TotaVivo '+APP_VERSION+' ready! Your voice settings were preserved.');speak('TotaVivo has been updated to version '+APP_VERSION+'. Your voice settings were preserved exactly as you set them. Long live your whole life, '+seniorName+'! Just tap my microphone anytime you need me.');loadVoiceSettings();setTimeout(startPermissionReviewWizard,1100);},1800);}},200);}
+async function startUpdate(){
+  clearInterval(updTimer);
+  var btn=document.getElementById('upd-now'),prog=document.getElementById('upd-prog'),bar=document.getElementById('upd-bar'),lbl=document.getElementById('upd-lbl');
+  btn.innerHTML='<span>🔎 Checking for the real update…</span>';btn.disabled=true;prog.classList.add('show');lbl.style.display='block';bar.style.width='20%';lbl.textContent='Contacting TotaVivo update service…';
+  if(!('serviceWorker' in navigator)||location.protocol==='file:'){
+    bar.style.width='0%';lbl.textContent='Open the installed TotaVivo app or Netlify test site to update.';btn.innerHTML='<span>Try Again</span>';btn.disabled=false;return;
+  }
+  try{
+    var reg=swRegistration||await navigator.serviceWorker.getRegistration('./')||await navigator.serviceWorker.register('sw.js');
+    swRegistration=reg;bar.style.width='45%';lbl.textContent='Downloading the newest app files…';
+    await reg.update();
+    if(reg.installing)await new Promise(function(resolve){var worker=reg.installing,t=setTimeout(resolve,10000);worker.addEventListener('statechange',function(){if(worker.state==='installed'||worker.state==='activated'||worker.state==='redundant'){clearTimeout(t);resolve();}});});
+    if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
+    if('caches' in window){var keys=await caches.keys(),keep='totavivo-v'+APP_VERSION;await Promise.all(keys.filter(function(k){return k.indexOf('totavivo-')===0&&k!==keep;}).map(function(k){return caches.delete(k);}));}
+    bar.style.width='100%';lbl.textContent='✅ Update downloaded. Reloading TotaVivo now…';
+    setTimeout(function(){location.replace(location.pathname+'?updated='+Date.now()+location.hash);},700);
+  }catch(e){
+    bar.style.width='0%';lbl.textContent='Could not reach the update service. Check internet, then try again.';btn.innerHTML='<span>Try Update Again</span>';btn.disabled=false;logEvent('app_update_failed',{error:String(e)});
+  }
+}
 
 // ═══ TOAST / UNDO ═══
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -4829,8 +4850,11 @@ logEvent('app_opened',{platform:navigator.platform,viewport:window.innerWidth+'x
 
 // ═══ PWA — service worker registration + deep-link routing ═══
 if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swReloading)return;swReloading=true;location.reload();});
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').then(reg=>{
+      swRegistration=reg;
+      reg.update();
       logEvent('sw_registered',{scope:reg.scope});
     }).catch(err=>{
       // file:// or http:// without proper headers won't register — this is fine

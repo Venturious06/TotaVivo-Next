@@ -1,5 +1,5 @@
 // TotaVivo service worker — caches everything for offline use after first load.
-const CACHE = 'totavivo-v8.3.0';
+const CACHE = 'totavivo-v8.3.1';
 const ASSETS = [
   './',
   './life-companion.html',
@@ -37,13 +37,18 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Pages (HTML) are network-first so updates appear immediately; other same-origin
-// assets stay cache-first for offline speed.
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// Pages and executable app files are network-first so an installed phone app cannot
+// remain stuck on an old HTML, JavaScript, CSS, manifest, or service worker build.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
   if (e.request.method !== 'GET') return;
-  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+  const updateCritical = e.request.mode === 'navigate' || /\.(?:html|js|css|json)$/.test(url.pathname) || url.pathname.endsWith('/sw.js');
+  if (updateCritical) {
     e.respondWith(
       fetch(e.request).then(resp => {
         if (resp && resp.status === 200) {
