@@ -3252,7 +3252,7 @@ function setColorFilter(cf){
   currentColorFilter=cf;
   applyColorFilter(cf);
   try{TotaStorage.setItem(CF_KEY,cf);}catch(e){}
-  var label={none:'True Color',tritanopia:'Tritanopia (Blue/Yellow)',protanopia:'Protanopia (Red weak)',deuteranopia:'Deuteranopia (Green weak)'}[cf]||cf;
+  var label={none:'True Color',tritanopia:'Tritanopia (blue/yellow)',protanopia:'Protanopia (red cone)',deuteranopia:'Deuteranopia (green cone)'}[cf]||cf;
   showToast('👁 '+label);
   speak(cf==='none'?'Color filter off. True color.':'Color filter set to '+label+'.');
   if(typeof logEvent==='function')logEvent('color_filter_changed',{filter:cf});

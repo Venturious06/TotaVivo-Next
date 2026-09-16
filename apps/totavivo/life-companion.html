@@ -35,8 +35,7 @@
 <body class="deep">
 <a aria-label="Open Tota Group" href="../../index.html" style="position:fixed;left:8px;bottom:8px;z-index:9998;text-decoration:none;background:rgba(14,46,95,.88);color:#ffd770;border:1px solid #e7b14a;border-radius:999px;padding:5px 9px;font:800 10px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;backdrop-filter:blur(8px)" title="Tota Group">Tota Group</a>
 <!-- ═══ Color-vision simulation filters (hidden) ═══
-     Matrices are the standard Brettel/Viénot-Mollon simulations used by Chrome DevTools,
-     macOS Accessibility, and the W3C accessibility spec examples. -->
+     Compact SVG matrix approximations for comparing common color-vision deficiencies. -->
 <svg aria-hidden="true" height="0" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none" width="0">
 <defs>
 <filter color-interpolation-filters="sRGB" id="cb-tritanopia">
@@ -887,7 +886,7 @@
 <!-- COLOR VISION FILTER -->
 <div class="card">
 <div class="ct">👁️ Color Vision Filter</div>
-<div style="font-size:10px;color:var(--sub);margin-bottom:7px;line-height:1.5">Simulate how the app looks with color blindness, or apply as a viewing aid. Each preview swatch already shows that vision applied so you can compare before picking.</div>
+<div style="font-size:10px;color:var(--sub);margin-bottom:7px;line-height:1.5">Simulate common color-vision differences, or apply as a viewing aid. Each preview swatch already shows that vision applied so you can compare before picking.</div>
 <div class="cf-grid">
 <button class="cf-opt active" data-cf="none" onclick="setColorFilter('none')">
 <div class="cf-name">True Color</div>
@@ -896,17 +895,17 @@
 </button>
 <button class="cf-opt" data-cf="tritanopia" onclick="setColorFilter('tritanopia')">
 <div class="cf-name">Tritanopia</div>
-<div class="cf-desc">BLUE / YELLOW</div>
+<div class="cf-desc">BLUE-CONE · BLUE / YELLOW</div>
 <div class="cf-swatch"><span style="background:#ff3b3b"></span><span style="background:#ff7a45"></span><span style="background:#ffd166"></span><span style="background:#00e676"></span><span style="background:#5bb8ff"></span><span style="background:#b46aff"></span></div>
 </button>
 <button class="cf-opt" data-cf="protanopia" onclick="setColorFilter('protanopia')">
 <div class="cf-name">Protanopia</div>
-<div class="cf-desc">RED WEAK · RED / GREEN</div>
+<div class="cf-desc">RED-CONE · RED / GREEN</div>
 <div class="cf-swatch"><span style="background:#ff3b3b"></span><span style="background:#ff7a45"></span><span style="background:#ffd166"></span><span style="background:#00e676"></span><span style="background:#5bb8ff"></span><span style="background:#b46aff"></span></div>
 </button>
 <button class="cf-opt" data-cf="deuteranopia" onclick="setColorFilter('deuteranopia')">
 <div class="cf-name">Deuteranopia</div>
-<div class="cf-desc">GREEN WEAK · GREEN / RED</div>
+<div class="cf-desc">GREEN-CONE · RED / GREEN</div>
 <div class="cf-swatch"><span style="background:#ff3b3b"></span><span style="background:#ff7a45"></span><span style="background:#ffd166"></span><span style="background:#00e676"></span><span style="background:#5bb8ff"></span><span style="background:#b46aff"></span></div>
 </button>
 </div>
