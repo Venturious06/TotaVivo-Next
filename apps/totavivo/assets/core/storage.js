@@ -1,4 +1,4 @@
-/* TotaVivo 8.2 shared storage layer.
+/* TotaVivo 8.3 shared storage layer.
    One guarded API for durable/session state, JSON values, migrations, export and recovery. */
 (function(root){
   'use strict';
@@ -40,7 +40,7 @@
   var session=facade(root.sessionStorage,'session');
   var migrations=[];
   var api={
-    version:'8.2.0',
+    version:'8.3.0',
     persistent:persistent,
     session:session,
     registerMigration:function(id,run){migrations.push({id:id,run:run});},

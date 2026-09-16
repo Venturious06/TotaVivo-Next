@@ -1,8 +1,8 @@
-/* TotaVivo Life Companion v8.2 — extracted from the validated v7.3.29 build. */
+/* TotaVivo Life Companion v8.3 — official icon and integration-ready build. */
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.2.0';
+var APP_VERSION='8.3.0';
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
 var SENIOR_NAME_KEY='totavivo_senior_name';
 var seniorName='Dorothy';

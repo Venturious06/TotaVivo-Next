@@ -9,9 +9,9 @@ For deployment, publish the entire folder as the site root. The TotaVivo PWA fil
 
 ## Build 8.3 modular foundation
 
-The Life Companion now uses external CSS and JavaScript assets and includes a repeatable smoke-test command: `npm test`. See `docs/BUILD-8.1-CHANGELOG.md`.
+The Life Companion now uses external CSS and JavaScript assets and includes a repeatable smoke-test command: `npm test`. See `docs/BUILD-8.3-CHANGELOG.md`.
 
 
 ## Build 8.3
 
-See `docs/BUILD-8.3-CHANGELOG.md` for the shared storage, state, medication, and safety module changes.
+See `docs/BUILD-8.3-CHANGELOG.md` for the latest frequently used modules, Vivo Guardian, Accident Assistant, financial integration boundary, payment handoffs, shared storage, state, medication, and safety module changes.

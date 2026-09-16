@@ -18,4 +18,4 @@ check(context.TotaMedications.list().length===1,'medication module persists item
 check(context.TotaSafety.setSensitivity(99)===6,'safety sensitivity is bounded');
 context.TotaSafety.setMotionGranted(true);
 check(context.TotaSafety.snapshot().motionGranted===true,'safety motion preference persists');
-console.log('\nTotaVivo 8.2 core module tests passed.');
+console.log('\nTotaVivo 8.3 core module tests passed.');

@@ -22,4 +22,4 @@ for (const asset of ['logo.png','icon-180.png','icon-192.png','icon-512.png','ma
 check(html.includes('Safety') || js.includes('fall'), 'safety feature code remains present');
 check(js.includes('TotaStorage'), 'shared persistent storage is used');
 check(!js.includes('localStorage') && !js.includes('sessionStorage'), 'main app has no direct browser-storage access');
-console.log('\nTotaVivo v8.2 smoke test passed.');
+console.log('\nTotaVivo v8.3 smoke test passed.');
