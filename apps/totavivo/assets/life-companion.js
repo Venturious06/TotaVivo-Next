@@ -2172,10 +2172,13 @@ function addMed(){
   var dose=document.getElementById('med-dose').value.trim()||'As prescribed';
   var freq=document.getElementById('med-freq').value.trim()||'Daily';
   var times=document.getElementById('med-times').value.trim()||'As needed';
+  var pharmacyId=document.getElementById('med-pharmacy').value;
+  if(pharmacyId)try{TotaStorage.setItem('totavivo_preferred_pharmacy',pharmacyId);}catch(e){}
   if(!name){showToast('Please enter a medication name');return;}
   var d=document.createElement('div');
   d.className='mi';
-  d.innerHTML='<div class="mic" style="background:rgba(74,144,226,.12)">💊</div><div class="min2"><div class="mn">'+esc(name)+'</div><div class="md">'+esc(dose)+' · '+esc(freq)+'</div><div class="mt">⏰ '+esc(times)+'</div></div><div class="mst"><button class="tbtn" onclick="trigConf(\''+escJs('Take '+name)+'\',\'doTakeMed(&quot;'+escAttr(name)+'&quot;)\')">Take 💊</button></div>';
+  var pharmacy=getPreferredPharmacy();
+  d.innerHTML='<div class="mic" style="background:rgba(74,144,226,.12)">💊</div><div class="min2"><div class="mn">'+esc(name)+'</div><div class="md">'+esc(dose)+' · '+esc(freq)+'</div><div class="mt">⏰ '+esc(times)+(pharmacy?' · '+esc(pharmacy.name):'')+'</div></div><div class="mst"><button class="tbtn" onclick="trigConf(\''+escJs('Take '+name)+'\',\'doTakeMed(&quot;'+escAttr(name)+'&quot;)\')">Take 💊</button></div>';
   document.getElementById('med-list').appendChild(d);
   if(typeof syncClient!=='undefined'&&syncClient&&syncState.linked){
     syncClient.from('medications').insert({household_id:syncState.householdId,name:name,dose:dose,frequency:freq,reminder_times:times}).select().single().then(function(res){
@@ -2185,6 +2188,15 @@ function addMed(){
   ['med-inp','med-dose','med-freq','med-times'].forEach(id=>document.getElementById(id).value='');
   medSugVal='';hideSug('med');speak(name+' added.');showToast('✅ '+name+' added!');showSyncIndicator();
 }
+function pharmacyContacts(){return allContacts.filter(function(c){return c.role==='Pharmacy'||/pharmacy/i.test(c.name+' '+c.role);});}
+function loadPharmacyChoices(){
+  var sel=document.getElementById('med-pharmacy');if(!sel)return;
+  var saved='';try{saved=TotaStorage.getItem('totavivo_preferred_pharmacy')||'';}catch(e){}
+  sel.innerHTML='<option value="">Choose the pharmacy listed in TotaVivo</option>'+pharmacyContacts().map(function(c){return '<option value="'+escAttr(c.phone)+'">'+esc(c.name)+' · '+esc(c.phone)+'</option>';}).join('');
+  if(saved)sel.value=saved;
+}
+function getPreferredPharmacy(){var contacts=pharmacyContacts(),saved='';try{saved=TotaStorage.getItem('totavivo_preferred_pharmacy')||'';}catch(e){}return contacts.find(function(c){return c.phone===saved;})||contacts[0]||null;}
+function codeActPharmacy(){var p=getPreferredPharmacy();if(!p){showToast('Add a pharmacy to TotaVivo contacts first');return;}showToast('☎ Opening '+p.name+' — confirm medication details with the pharmacy');try{window.location.href='tel:'+p.phone.replace(/[^\d+]/g,'');}catch(e){}}
 function syncPullMeds(){
   if(!syncClient||!syncState.linked)return;
   syncClient.from('medications').select('*').eq('household_id',syncState.householdId).then(function(res){
@@ -2748,6 +2760,7 @@ function handleCodeResult(value,fmt){
   if(info.kind==='geo')btns+='<button class="bb gm" onclick="codeActMaps()" style="min-height:42px;font-size:12px"><div class="f"></div><span>🗺️ Open in Maps</span></button>';
   if(info.kind==='wifi')btns+='<button class="bb gm" onclick="codeActCopyWifi()" style="min-height:42px;font-size:12px"><div class="f"></div><span>📋 Copy WiFi Password</span></button>';
   btns+='<button class="bb gp" onclick="codeActSpeak()" style="min-height:42px;font-size:12px"><div class="f"></div><span>🔊 Read It Aloud Again</span></button>';
+  if(getPreferredPharmacy())btns+='<button class="bb gf" onclick="codeActPharmacy()" style="min-height:42px;font-size:12px"><div class="f"></div><span>💊 Contact My Pharmacy</span></button>';
   btns+='<button class="bb go" onclick="codeActCopy()" style="min-height:42px;font-size:12px;margin-bottom:0"><div class="f"></div><span>📋 Copy</span></button>';
   // If this code isn't a medicine packaging code (e.g. a pharmacy sign-up QR or Rx-number
   // barcode on a dispensed bottle), the code can't tell us the drug — offer typing the name.
@@ -3304,6 +3317,9 @@ function openFeedbackEmail(){
 // ═══ SETUP WIZARD — first run only. Asks each permission one at a time, with a real Allow/Not Now choice. ═══
 var SETUP_DONE_KEY='totavivo_setup_completed';
 var setupStepIndex=0;
+var permissionReviewOnly=false;
+var PERMISSION_PREFS_KEY='totavivo_permission_preferences_v1';
+var permissionPrefs={camera_mic:'necessary',location:'necessary',motion:'necessary',notifications:'necessary'};
 var SETUP_STEPS=[
   {kind:'intro'},
   {kind:'disclaimer'},
@@ -3315,11 +3331,13 @@ var SETUP_STEPS=[
   {kind:'done'},
 ];
 function maybeShowSetupWizard(){
+  loadPermissionPrefs();
   var done=false;
   try{done=TotaStorage.getItem(SETUP_DONE_KEY)==='1';}catch(e){}
   if(!done)setTimeout(startSetupWizard,600);
 }
 function startSetupWizard(){
+  permissionReviewOnly=false;
   setupStepIndex=0;renderSetupStep();
   // The corner X only exists for re-runs from Settings. First run keeps the wizard
   // unskippable so the safety disclaimer is always seen before the app is used.
@@ -3347,8 +3365,12 @@ function renderSetupStep(){
       +'<button class="bb gf" onclick="setupAcceptDisclaimer()" style="margin-top:14px;margin-bottom:0"><div class="f"></div><span>✅ I Understand and Agree</span></button>';
   }else if(s.kind==='perm'){
     c.innerHTML='<div style="font-size:50px;margin-bottom:10px">'+s.icon+'</div><div class="setup-title">'+esc(s.title)+'</div><div class="setup-body">'+esc(s.why)+'</div>'
-      +'<button class="bb gf" onclick="setupAllow()" style="margin-top:16px;margin-bottom:7px"><div class="f"></div><span>✅ Allow</span></button>'
-      +'<button class="bb gl" onclick="setupNext()" style="margin-bottom:0"><div class="f"></div><span>Not Now</span></button>';
+      +'<div class="permission-choice-grid">'
+      +'<button class="permission-choice" onclick="chooseSetupPermission(\'always\')"><strong>Always Allow</strong><span>Use whenever this feature needs it. Your device still has final control.</span></button>'
+      +'<button class="permission-choice recommended" onclick="chooseSetupPermission(\'necessary\')"><strong>Allow When Necessary</strong><span>Recommended. Ask only when you use the feature.</span></button>'
+      +'<button class="permission-choice" onclick="chooseSetupPermission(\'once\')"><strong>Allow Once</strong><span>Use now only. Some reminders or safety features may be less reliable.</span></button>'
+      +'<button class="permission-choice never" onclick="chooseSetupPermission(\'never\')"><strong>Never Allow</strong><span>Not recommended. Features that need this item will stay off.</span></button>'
+      +'</div><label class="permission-remember"><input id="setup-perm-remember" type="checkbox" checked> Remember my choice</label>';
   }else if(s.kind==='name'){
     c.innerHTML='<div style="font-size:50px;margin-bottom:10px">👋</div><div class="setup-title">Let\'s get to know each other</div><div class="setup-body">What should Vivo call you? Used everywhere TotaVivo speaks to you.</div>'
       +'<input class="form-inp" id="setup-name-input" type="text" placeholder="Your name" value="'+escAttr(seniorName==='Dorothy'?'':seniorName)+'" style="text-align:center;font-weight:800;font-size:16px;margin-top:12px">'
@@ -3357,8 +3379,21 @@ function renderSetupStep(){
     c.innerHTML='<div style="font-size:50px;margin-bottom:10px">✨</div><div class="setup-title">You\'re all set!</div><div class="setup-body">Tap the 🎙️ microphone at the top anytime you need help. Long live your whole life.</div><button class="bb gf" onclick="finishSetupWizard()" style="margin-top:16px;margin-bottom:0"><div class="f"></div><span>Start Using TotaVivo</span></button>';
   }
 }
-function setupAllow(){var s=SETUP_STEPS[setupStepIndex];if(s.action)s.action();setupNext();}
-function setupNext(){setupStepIndex++;if(setupStepIndex>=SETUP_STEPS.length){finishSetupWizard();return;}renderSetupStep();}
+function permissionKeyForStep(s){return s.title==='Location'?'location':s.title.indexOf('Motion')===0?'motion':s.title==='Notifications'?'notifications':'camera_mic';}
+function loadPermissionPrefs(){try{var p=JSON.parse(TotaStorage.getItem(PERMISSION_PREFS_KEY)||'{}');Object.assign(permissionPrefs,p);}catch(e){}renderPermissionPolicyList();}
+function savePermissionPrefs(){try{TotaStorage.setItem(PERMISSION_PREFS_KEY,JSON.stringify(permissionPrefs));}catch(e){}renderPermissionPolicyList();}
+function chooseSetupPermission(choice){
+  var s=SETUP_STEPS[setupStepIndex],remember=document.getElementById('setup-perm-remember');
+  if(remember&&remember.checked){permissionPrefs[permissionKeyForStep(s)]=choice;savePermissionPrefs();}
+  if(choice==='always'||choice==='once'){if(s.action)s.action();}
+  if(choice==='never')showToast('Permission saved as Never Allow');
+  setupNext();
+}
+function setupAllow(){chooseSetupPermission('necessary');}
+function setupNext(){setupStepIndex++;if(permissionReviewOnly&&SETUP_STEPS[setupStepIndex]&&SETUP_STEPS[setupStepIndex].kind!=='perm'){finishPermissionReview();return;}if(setupStepIndex>=SETUP_STEPS.length){finishSetupWizard();return;}renderSetupStep();}
+function startPermissionReviewWizard(){permissionReviewOnly=true;setupStepIndex=SETUP_STEPS.findIndex(function(s){return s.kind==='perm';});var x=document.getElementById('setup-x');if(x)x.style.display='flex';document.getElementById('setup-ov').classList.add('show');renderSetupStep();}
+function finishPermissionReview(){permissionReviewOnly=false;document.getElementById('setup-ov').classList.remove('show');renderPermissionPolicyList();showToast('🔐 Permission choices saved');}
+function renderPermissionPolicyList(){var box=document.getElementById('permission-policy-list');if(!box)return;var labels={always:'Always Allow',necessary:'Allow When Necessary',once:'Allow Once',never:'Never Allow'};var items=[['📍 GPS / Location','location'],['📷🎙 Camera & Microphone','camera_mic'],['🤸 Motion Sensors','motion'],['🔔 Notifications','notifications']];box.innerHTML=items.map(function(item){return '<div class="permission-policy-row"><span class="permission-policy-name">'+item[0]+'</span><span class="permission-policy-value">'+labels[permissionPrefs[item[1]]]+'</span></div>';}).join('');}
 function setupSaveName(){var v=document.getElementById('setup-name-input').value.trim();if(v)saveSeniorName(v);setupNext();}
 var DISCLAIMER_ACCEPTED_KEY='totavivo_disclaimer_accepted';
 function setupAcceptDisclaimer(){
@@ -3372,12 +3407,13 @@ function finishSetupWizard(){
   document.getElementById('setup-ov').classList.remove('show');
   speak('Welcome to TotaVivo, '+seniorName+'. Long live your whole life.');
   if(typeof logEvent==='function')logEvent('setup_wizard_completed',{});
+  setTimeout(maybeShowSyncAsk,500);
 }
 
 function showUpdate(){document.getElementById('upd-ov').classList.add('show');startUpdCount();}
 function dismissUpdate(){document.getElementById('upd-ov').classList.remove('show');clearInterval(updTimer);showToast('⏰ Reminder set for tomorrow');}
 function startUpdCount(){clearInterval(updTimer);updTimer=setInterval(()=>{updCountdown.s--;if(updCountdown.s<0){updCountdown.s=59;updCountdown.m--;}if(updCountdown.m<0){updCountdown.m=59;updCountdown.h--;}if(updCountdown.h<0){updCountdown.h=23;updCountdown.d--;}if(updCountdown.d<0){clearInterval(updTimer);startUpdate();return;}var el=document.getElementById('ucdt');if(el)el.textContent=updCountdown.d+'d '+pad2(updCountdown.h)+':'+pad2(updCountdown.m)+':'+pad2(updCountdown.s);},1000);}
-function startUpdate(){clearInterval(updTimer);document.getElementById('upd-now').innerHTML='<span>⬇️ Downloading…</span>';document.getElementById('upd-now').disabled=true;var prog=document.getElementById('upd-prog'),bar=document.getElementById('upd-bar'),lbl=document.getElementById('upd-lbl');prog.classList.add('show');lbl.style.display='block';var pct=0;var msgs=['Downloading '+APP_VERSION+'…','Installing apps hub…','Saving your voice settings…','Syncing all devices…','Complete!'];var mi=0;var t=setInterval(()=>{pct+=Math.random()*7+3;if(pct>100)pct=100;bar.style.width=pct+'%';lbl.textContent=msgs[Math.min(mi++,4)]+' '+Math.round(pct)+'%';if(pct>=100){clearInterval(t);lbl.textContent='✅ TotaVivo '+APP_VERSION+' installed!';setTimeout(()=>{document.getElementById('upd-ov').classList.remove('show');showToast('✅ TotaVivo '+APP_VERSION+' ready! Your voice settings were preserved.');speak('TotaVivo has been updated to version '+APP_VERSION+'. Your voice settings were preserved exactly as you set them. Long live your whole life, '+seniorName+'! Just tap my microphone anytime you need me.');loadVoiceSettings();},1800);}},200);}
+function startUpdate(){clearInterval(updTimer);document.getElementById('upd-now').innerHTML='<span>⬇️ Downloading…</span>';document.getElementById('upd-now').disabled=true;var prog=document.getElementById('upd-prog'),bar=document.getElementById('upd-bar'),lbl=document.getElementById('upd-lbl');prog.classList.add('show');lbl.style.display='block';var pct=0;var msgs=['Downloading '+APP_VERSION+'…','Installing apps hub…','Saving your voice settings…','Syncing all devices…','Complete!'];var mi=0;var t=setInterval(()=>{pct+=Math.random()*7+3;if(pct>100)pct=100;bar.style.width=pct+'%';lbl.textContent=msgs[Math.min(mi++,4)]+' '+Math.round(pct)+'%';if(pct>=100){clearInterval(t);lbl.textContent='✅ TotaVivo '+APP_VERSION+' installed!';setTimeout(()=>{document.getElementById('upd-ov').classList.remove('show');showToast('✅ TotaVivo '+APP_VERSION+' ready! Your voice settings were preserved.');speak('TotaVivo has been updated to version '+APP_VERSION+'. Your voice settings were preserved exactly as you set them. Long live your whole life, '+seniorName+'! Just tap my microphone anytime you need me.');loadVoiceSettings();setTimeout(startPermissionReviewWizard,1100);},1800);}},200);}
 
 // ═══ TOAST / UNDO ═══
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
@@ -3541,6 +3577,7 @@ function initNetwork(){
 }
 // Location
 function requestLocation(){
+  if(permissionPrefs.location==='never'){showToast('Location is set to Never Allow — change it in Sensors & Permissions');return;}
   if(!navigator.geolocation){showToast('Geolocation not supported');return;}
   logEvent('permission_requested',{sensor:'location'});
   navigator.geolocation.getCurrentPosition(
@@ -3560,7 +3597,7 @@ var MOTION_GRANTED_KEY='totavivo_motion_granted';
 // silently drops step counting and fall detection back to Off, with nothing telling the user —
 // that's what "steps don't work" turns out to actually be.
 function autoResumeMotion(){
-  try{if(TotaStorage.getItem(MOTION_GRANTED_KEY)==='1')requestMotion();}catch(e){}
+  try{if(permissionPrefs.motion!=='never'&&TotaStorage.getItem(MOTION_GRANTED_KEY)==='1')requestMotion();}catch(e){}
 }
 // ── Fall detection tuning ──
 // Sensitivity sets how hard an impact (in g) must be before the fall check even starts.
@@ -3621,6 +3658,7 @@ function renderFallPauseState(){
   if(btn)btn.onclick=paused?resumeFallAlerts:pauseFallUntilTomorrow;
 }
 async function requestMotion(){
+  if(permissionPrefs.motion==='never'){showToast('Motion is set to Never Allow — change it in Sensors & Permissions');return;}
   logEvent('permission_requested',{sensor:'motion'});
   try{
     // iOS 13+ requires explicit permission
@@ -3678,6 +3716,7 @@ async function requestMotion(){
 function stopMotion(){if(motionHandler){window.removeEventListener('devicemotion',motionHandler);motionHandler=null;}sensorState.motion.enabled=false;logEvent('motion_stopped');renderSensorHub();}
 // Notifications
 async function requestNotifPerm(){
+  if(permissionPrefs.notifications==='never'){showToast('Notifications are set to Never Allow — change this in Sensors & Permissions');return;}
   if(!('Notification' in window)){showToast('Notifications not supported');return;}
   logEvent('permission_requested',{sensor:'notifications'});
   var p=await Notification.requestPermission();
@@ -3701,6 +3740,7 @@ async function checkMediaPerms(){
   }
 }
 async function requestCameraMic(){
+  if(permissionPrefs.camera_mic==='never'){showToast('Camera and microphone are set to Never Allow — change this in Sensors & Permissions');return;}
   logEvent('permission_requested',{sensor:'camera_mic'});
   try{
     var s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
@@ -4443,6 +4483,7 @@ function readAllChat(){
 // ── FIRST-RUN DEVICE SYNC ASK — shows once, remembers the answer ──
 var SYNC_ASK_KEY='totavivo_sync_choice';
 function maybeShowSyncAsk(){
+  try{if(TotaStorage.getItem(SETUP_DONE_KEY)!=='1')return;}catch(e){return;}
   try{if(TotaStorage.getItem(SYNC_ASK_KEY))return;}catch(e){}
   document.getElementById('sync-ask-ov').classList.add('show');
   speak('Welcome to TotaVivo! Do you want to sync these features with your device?');
@@ -4716,8 +4757,10 @@ loadCameras();
 loadSteps();
 loadRetention();
 loadImportPrefs();
+loadPharmacyChoices();
 loadFeatures();
 renderSteps();
+loadPermissionPrefs();
 autoResumeMotion();
 loadSyncState();
 loadSubState();

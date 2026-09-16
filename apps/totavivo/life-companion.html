@@ -335,6 +335,10 @@
 <div class="uci">• Pre-recorded message: "Front door unlocked"</div>
 <div class="uci">• Voice: Susan — Warm &amp; Clear · Speed: Normal</div>
 </div>
+<div class="upd-changes permission-update-note"><div class="ucl">🔐 Permission Check</div>
+<div class="uci">Review GPS, camera, microphone, motion sensor, and notification choices after this update.</div>
+<button class="bb gm" onclick="startPermissionReviewWizard()" style="margin-top:7px;margin-bottom:0;min-height:38px;font-size:11px"><div class="f"></div><span>Review Permission Choices</span></button>
+</div>
 </div>
 <div class="upd-bot">
 <div class="upd-prog" id="upd-prog"><div class="upd-prog-bar" id="upd-bar"></div></div>
@@ -559,6 +563,7 @@
 <div class="ai-sug" id="med-fda" style="display:none"></div>
 <div class="f2" style="margin-bottom:6px"><div class="form-row"><label>Dose</label><input class="form-inp" id="med-dose" placeholder="e.g. 500mg"/></div><div class="form-row"><label>Frequency</label><input class="form-inp" id="med-freq" placeholder="Twice daily"/></div></div>
 <div class="form-row" style="margin-bottom:6px"><label>Reminder Times</label><input class="form-inp" id="med-times" placeholder="8:00 AM, 8:00 PM"/></div>
+<div class="form-row" style="margin-bottom:6px"><label>My Pharmacy</label><select class="form-inp" id="med-pharmacy"><option value="">Choose the pharmacy listed in TotaVivo</option></select></div>
 <button class="bb gf" onclick="addMed()" style="margin-bottom:6px"><div class="f"></div><span>➕ Add Medication</span></button>
 <button class="bb gor" onclick="openCodeScanner()" style="margin-bottom:0"><div class="f"></div><span>📷 Scan a Medicine Bottle Barcode</span></button>
 </div>
@@ -1439,6 +1444,12 @@
 <!-- ══ SENSOR HUB ══ -->
 <div class="screen" id="s-sensors">
 <div class="sl">📡 Sensors &amp; Permissions<button class="screen-x" onclick="switchTab('home')" title="Back to Home">✕</button></div>
+<div class="card permission-center-card">
+<div class="ct">🔐 My Permission Choices</div>
+<div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px">TotaVivo remembers when you want each feature used. Your phone or browser always makes the final permission decision.</div>
+<div id="permission-policy-list"></div>
+<button class="bb gm" onclick="startPermissionReviewWizard()" style="margin-top:8px;margin-bottom:0;min-height:38px;font-size:11px"><div class="f"></div><span>Review All Permission Choices</span></button>
+</div>
 <div class="card">
 <div class="ct">📱 This Device</div>
 <div id="device-info" style="font-size:11px;color:var(--sub);line-height:1.7"></div>
