@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.5';
+var APP_VERSION='8.3.6';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -1884,7 +1884,11 @@ var ROBOT_VOICE_BLOCKLIST=['Albert','Bad News','Bahh','Bells','Boing','Bubbles',
 var PREFERRED_VOICES=['Daniel','Google UK English Male','Microsoft Ryan','Microsoft George','Arthur','Oliver','Samantha','Karen','Ava','Allison','Susan','Tom','Moira','Serena','Fiona','Google US English','Google UK English Female','Microsoft Aria','Microsoft Jenny','Microsoft Guy','Siri','Nicky','Tessa'];
 function isRobotVoice(v){return ROBOT_VOICE_BLOCKLIST.some(j=>v.name&&v.name.split(' ')[0]===j);}
 function getNaturalVoices(){if(!synth)return[];var voices=synth.getVoices();return voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith('en')&&!isRobotVoice(v));}
-function rankVoice(v){for(var i=0;i<PREFERRED_VOICES.length;i++){if(v.name&&v.name.startsWith(PREFERRED_VOICES[i]))return i;}return 100+(v.localService?0:50);}
+function rankVoice(v){
+  var deviceRank=v.localService?0:1000;
+  for(var i=0;i<PREFERRED_VOICES.length;i++){if(v.name&&v.name.startsWith(PREFERRED_VOICES[i]))return deviceRank+i;}
+  return deviceRank+100;
+}
 function pickDefaultVoice(){var natural=getNaturalVoices();if(!natural.length)return null;natural.sort((a,b)=>rankVoice(a)-rankVoice(b));return natural[0];}
 function saveVoiceSettings(){try{TotaStorage.setItem(VOICE_STORAGE_KEY,JSON.stringify({rate:voiceRate,pitch:voicePitch,vol:voiceVol,voiceName:selVoice?selVoice.name:null}));}catch(e){}}
 function loadVoiceSettings(){try{var s=TotaStorage.getItem(VOICE_STORAGE_KEY);if(s){var d=JSON.parse(s);voiceRate=d.rate||0.9;voicePitch=d.pitch||1.0;voiceVol=d.vol||1.0;if(d.voiceName&&synth){var voices=synth.getVoices();var found=voices.find(v=>v.name===d.voiceName);if(found)selVoice=found;}}if(!selVoice)selVoice=pickDefaultVoice();}catch(e){selVoice=pickDefaultVoice();}}
@@ -1960,7 +1964,7 @@ function loadVoices(){
   if(!top.length){list.innerHTML='<div style="font-size:11px;color:var(--sub);padding:8px">No natural voices found on this device.</div>';return;}
   top.forEach((v,i)=>{
     var label=avatars[i%avatars.length]+v.name;
-    var desc=v.lang+(v.localService?' · On Device':' · Cloud');
+    var desc=v.lang+(v.localService?' · On This Phone':' · Web Voice');
     var isActive=selVoice&&selVoice.name===v.name;
     var d=document.createElement('div');
     d.className='vi'+(isActive?' active':'');
@@ -4979,6 +4983,14 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then(reg=>{
       swRegistration=reg;
       reg.update();
+      reg.addEventListener('updatefound',function(){
+        var worker=reg.installing;if(!worker)return;
+        worker.addEventListener('statechange',function(){
+          if(worker.state==='installed'&&navigator.serviceWorker.controller)worker.postMessage({type:'SKIP_WAITING'});
+        });
+      });
+      setInterval(function(){if(navigator.onLine)reg.update();},15*60*1000);
+      document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&navigator.onLine)reg.update();});
       logEvent('sw_registered',{scope:reg.scope});
     }).catch(err=>{
       // file:// or http:// without proper headers won't register — this is fine
