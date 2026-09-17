@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.3';
+var APP_VERSION='8.3.4';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -3862,7 +3862,7 @@ async function requestNotifPerm(){
   sensorState.notifications=p;
   logEvent('permission_'+(p==='granted'?'granted':'denied'),{sensor:'notifications'});
   showToast('🔔 Notifications: '+p);
-  if(p==='granted')try{new Notification('TotaVivo',{body:'Notifications are on. Vivo can remind you anytime.',icon:'logo.svg'});}catch(e){}
+  if(p==='granted')try{new Notification('TotaVivo',{body:'Notifications are on. Vivo can remind you anytime.',icon:'logo-v834.svg'});}catch(e){}
   renderSensorHub();
 }
 // Storage

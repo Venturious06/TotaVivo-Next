@@ -1,5 +1,5 @@
 // TotaVivo service worker — caches everything for offline use after first load.
-const CACHE = 'totavivo-v8.3.3';
+const CACHE = 'totavivo-v8.3.4';
 const ASSETS = [
   './',
   './life-companion.html',
@@ -13,11 +13,11 @@ const ASSETS = [
   './assets/modules/integrations.js',
   './assets/modules/accident-assistant.js',
   './manifest.json',
-  './logo.svg',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-180.png',
-  './favicon-32.png',
+  './logo-v834.svg',
+  './icon-192-v834.png',
+  './icon-512-v834.png',
+  './icon-180-v834.png',
+  './favicon-32-v834.png',
 ];
 
 self.addEventListener('install', e => {
