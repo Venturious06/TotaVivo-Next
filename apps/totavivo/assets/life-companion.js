@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.2';
+var APP_VERSION='8.3.3';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -1380,7 +1380,7 @@ function showPanicCountdown(){
     '<button class="bp-safe" onclick="panicImSafe()">✅ I\'M SAFE<span class="bps-sub">Tap to stop everything</span></button>'+
     '<div class="bp-count" id="bp-count">Your help buttons appear in '+n+'s — press I\'m Safe if this was a mistake.</div>'+
     '<button class="bp-btn silence" onclick="silenceBeacon()">🔇 Silence (lights keep flashing)</button>'+
-    '<button class="bp-btn call911" onclick="showPanicHelp()">📞 Call 911 now</button>';
+    '<button class="bp-btn call911" onclick="showPanicHelp()">📞 Call 911 now</button>'+emergencyRecordAction();
   if(panic.countTimer)clearInterval(panic.countTimer);
   panic.countTimer=setInterval(function(){
     n--;var c=document.getElementById('bp-count');
@@ -1406,7 +1406,7 @@ function showPanicHelp(){
     }
   });
   html+='<div class="bp-honest">On this demo, Guardian turns on the siren, lights and location and gives you one-tap buttons to call 911 and text your family <b>that you press yourself</b>. Automatic dialing and a 24/7 monitoring team that sends responders for you exist only in the App Store / monitored version.</div>';
-  el.innerHTML=html;
+  el.innerHTML=html+emergencyRecordAction();
   speak('If you need help, press the red Call 911 button to call for help yourself.');
 }
 function panicImSafe(){
@@ -2589,7 +2589,7 @@ function renderFallHelpConsole(isHelp){
   // Honest banner — never claims a call was placed.
   html+='<div class="bp-honest">TotaVivo <b>cannot call anyone by itself — nothing has been sent.</b> The siren and flashing lights are on so people nearby can find '+esc(who)+'. Automatic calling and a 24/7 team that dispatches help for you come in the App Store version.</div>';
   html+='<button class="bp-safe" onclick="cancelAlarm()">✅ I AM OKAY<span class="bps-sub">Tap to stop the alarm</span></button>';
-  el.innerHTML=html;
+  el.innerHTML=html+emergencyRecordAction();
   fallCameraRefresh();
 }
 
@@ -2606,6 +2606,10 @@ function cancelAlarm(){
 function addEmergencyContact(){showToast('Open Contacts to add an emergency contact, then drag to reorder');}
 
 var emergencyRecorder=null,emergencyRecordStream=null,emergencyRecordChunks=[],emergencyRecordingUrl='',emergencyRecordStarted=0,emergencyRecordTimer=null;
+var recordingFromEmergency=false;
+function emergencyRecordAction(){
+  return '<button class="bp-btn contact-text" type="button" onclick="recordNewMessage(true)">🎙️ Record a Message</button><button class="bp-btn contact-text" type="button" onclick="playEmergencyRecording()">▶ Play My Recording</button>';
+}
 function ensureEmergencyRecorder(){
   var ov=document.getElementById('emergency-recorder');if(ov)return ov;
   ov=document.createElement('div');ov.id='emergency-recorder';ov.className='recording-overlay';
@@ -2619,7 +2623,12 @@ function ensureEmergencyRecorder(){
     +'<div class="recording-privacy">Microphone permission is requested only when you start recording.</div></div>';
   document.getElementById('phone').appendChild(ov);return ov;
 }
-function recordNewMessage(){var ov=ensureEmergencyRecorder();ov.classList.add('show');resetEmergencyRecorder('Ready to record');speak('Tap Start Recording, then speak your emergency message clearly.');}
+function recordNewMessage(fromEmergency){
+  recordingFromEmergency=fromEmergency===true;
+  var ov=ensureEmergencyRecorder();ov.classList.add('show');resetEmergencyRecorder('Ready to record');
+  document.getElementById('recording-start').focus();
+  if(!recordingFromEmergency)speak('Tap Start Recording, then speak your emergency message clearly.');
+}
 async function startEmergencyRecording(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==='undefined'){showToast('This browser cannot record audio. Open TotaVivo in Safari or Chrome.');return;}
   if(typeof permissionPrefs!=='undefined'&&permissionPrefs.camera_mic==='never'){showToast('Microphone is set to Never Allow. Change it in Sensors and Permissions.');return;}
@@ -2639,7 +2648,7 @@ function finishEmergencyRecording(){
   if(emergencyRecordingUrl)URL.revokeObjectURL(emergencyRecordingUrl);var type=(emergencyRecorder&&emergencyRecorder.mimeType)||'audio/webm';emergencyRecordingUrl=URL.createObjectURL(new Blob(emergencyRecordChunks,{type:type}));
   var list=document.getElementById('pr-messages'),row=document.getElementById('pr-custom-message');if(!row){row=document.createElement('div');row.id='pr-custom-message';row.className='pr-msg-item';list.appendChild(row);}
   row.innerHTML='<div class="pr-msg-text">🎙️ “My recorded emergency message”</div><button class="pr-msg-play" type="button" onclick="playEmergencyRecording()">▶ Play</button><button class="pr-msg-sel" id="prs-custom" type="button" onclick="selectCustomEmergencyRecording()">Select</button>';
-  resetEmergencyRecorder('Saved. Use Play to check your message.');closeEmergencyRecorder();showToast('✅ Emergency message recorded and saved for this session');row.scrollIntoView({block:'center',behavior:'smooth'});if(typeof logEvent==='function')logEvent('emergency_recording_saved');
+  resetEmergencyRecorder('Saved. Use Play to check your message.');closeEmergencyRecorder();showToast('✅ Emergency message recorded and saved for this session');if(!recordingFromEmergency)row.scrollIntoView({block:'center',behavior:'smooth'});if(typeof logEvent==='function')logEvent('emergency_recording_saved');
 }
 function resetEmergencyRecorder(message){var status=document.getElementById('recording-status'),start=document.getElementById('recording-start'),stop=document.getElementById('recording-stop'),time=document.getElementById('recording-time');if(status)status.textContent=message||'Ready to record';if(start)start.disabled=false;if(stop)stop.disabled=true;if(time)time.textContent='0:00';}
 function closeEmergencyRecorder(){if(emergencyRecorder&&emergencyRecorder.state!=='inactive'){emergencyRecorder.onstop=null;emergencyRecorder.stop();}clearInterval(emergencyRecordTimer);emergencyRecordTimer=null;if(emergencyRecordStream){emergencyRecordStream.getTracks().forEach(function(t){t.stop();});emergencyRecordStream=null;}var ov=document.getElementById('emergency-recorder');if(ov)ov.classList.remove('show');resetEmergencyRecorder('Ready to record');}

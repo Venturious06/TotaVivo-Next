@@ -1,5 +1,5 @@
 // TotaVivo service worker — caches everything for offline use after first load.
-const CACHE = 'totavivo-v8.3.2';
+const CACHE = 'totavivo-v8.3.3';
 const ASSETS = [
   './',
   './life-companion.html',
