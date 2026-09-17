@@ -389,7 +389,7 @@
 <button class="upd-home" id="upd-home-btn" onclick="openUpdateAndDismiss()"><div class="uf"><span>☁️</span><div style="text-align:left"><div id="upd-home-title" style="font-size:13px;font-weight:900">TotaVivo — Major Update</div><div style="font-size:9px;opacity:.8;margin-top:1px">Apps Hub · Robot AI · Sync · Web Mode · Smart Nav</div></div><span class="upd-badge">4 days</span></div></button>
 <!-- ═══ LOCATION PREFERENCE CARD (merged from V6 work) — drives weather + caregiver location ═══ -->
 <div class="card location-pref-card" id="location-pref-card">
-<div class="ct" style="color:var(--tv-cyan);display:flex;justify-content:space-between;align-items:center">📍 Location Context<button class="screen-x" onclick="event.stopPropagation();dismissHomeCard('location-pref-card')" style="width:22px;height:22px;font-size:12px">✕</button></div>
+<div class="ct" style="color:var(--tv-cyan);display:flex;justify-content:space-between;align-items:center">📍 Location Context<button class="screen-x" onclick="event.stopPropagation();dismissLocationCard()" aria-label="Hide location card; GPS stays active" title="Hide this card; GPS stays active" style="width:22px;height:22px;font-size:12px">✕</button></div>
 <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
 <button class="abtn on" id="btn-gps-auto" onclick="enableLiveGPS()" style="flex:1;padding:6px;font-size:10px;font-weight:bold">🛰️ Use Device GPS</button>
 <div style="color:var(--sub);font-size:10px;font-weight:800">OR</div>

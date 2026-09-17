@@ -3112,6 +3112,8 @@ function renderWeather(){
 // ════════════════════════════════════════════════════════════════
 var LOC_KEY='totavivo_location_pref_v1';
 var currentCity='Orlando, FL';
+var liveGpsWatchId=null;
+var liveGpsLastGeocode=0;
 function loadLocationPref(){
   try{
     var s=TotaStorage.getItem(LOC_KEY);
@@ -3123,41 +3125,63 @@ function loadLocationPref(){
 }
 function saveLocationPref(city,zip){try{TotaStorage.setItem(LOC_KEY,JSON.stringify({city:city||currentCity,zip:zip||''}));}catch(e){}}
 function setLocationStatus(msg){var el=document.getElementById('location-status-msg');if(el)el.textContent=msg;}
+function dismissLocationCard(){
+  dismissHomeCard('location-pref-card');
+  showToast(liveGpsWatchId!==null?'📍 Card hidden · GPS stays active while TotaVivo is open':'📍 Location card hidden');
+}
+
+async function updateLiveGpsPosition(pos,announce){
+  var lat=pos.coords.latitude,lon=pos.coords.longitude;
+  if(typeof sensorState!=='undefined'&&sensorState){
+    sensorState.location={lat:lat.toFixed(5),lng:lon.toFixed(5),acc:Math.round(pos.coords.accuracy)};
+  }
+  setLocationStatus('📍 Live while TotaVivo is open · accuracy ±'+Math.round(pos.coords.accuracy)+'m');
+  var now=Date.now();
+  if(!announce&&now-liveGpsLastGeocode<60000)return;
+  liveGpsLastGeocode=now;
+  try{
+    var r=await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en');
+    var d=await r.json();
+    var city=d.city||d.locality||'Unknown';
+    var state=d.principalSubdivisionCode?d.principalSubdivisionCode.split('-')[1]:(d.principalSubdivision||'');
+    currentCity=state?(city+', '+state):city;
+    updateWeatherUI(currentCity);
+    saveLocationPref(currentCity,'');
+    setLocationStatus('📍 Live while TotaVivo is open: '+currentCity+' · ±'+Math.round(pos.coords.accuracy)+'m');
+    if(announce)showToast('📍 Live GPS on: '+currentCity);
+    if(typeof logEvent==='function')logEvent('location_gps_resolved',{city:currentCity,acc:Math.round(pos.coords.accuracy)});
+  }catch(err){
+    setLocationStatus('📍 Live GPS on while TotaVivo is open · address unavailable');
+    if(announce)showToast('📍 Live GPS is on');
+  }
+}
 
 function enableLiveGPS(){
   var inp=document.getElementById('pref-zipcode');if(inp)inp.value='';
   try{TotaStorage.removeItem('totavivo_pref_zip');}catch(e){}
   var gps=document.getElementById('btn-gps-auto');if(gps)gps.classList.add('on');
   if(!navigator.geolocation){showToast('❌ GPS not supported on this device');setLocationStatus('GPS not available · sandbox fallback');return;}
-  setLocationStatus('🛰️ Querying GPS satellites…');
+  setLocationStatus('🛰️ Starting live GPS…');
   if(typeof logEvent==='function')logEvent('location_gps_requested');
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    var lat=pos.coords.latitude, lon=pos.coords.longitude;
-    try{
-      var r=await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en');
-      var d=await r.json();
-      var city=d.city||d.locality||'Unknown';
-      var state=d.principalSubdivisionCode?d.principalSubdivisionCode.split('-')[1]:(d.principalSubdivision||'');
-      currentCity=state?(city+', '+state):city;
-      updateWeatherUI(currentCity);
-      saveLocationPref(currentCity,'');
-      showToast('📍 GPS: '+currentCity);
-      if(typeof logEvent==='function')logEvent('location_gps_resolved',{city:currentCity,acc:Math.round(pos.coords.accuracy)});
-    }catch(err){
-      setLocationStatus('⚠️ Reverse-geocode failed · using fallback');
-      updateWeatherUI('Orlando, FL');
-    }
+  if(liveGpsWatchId!==null)navigator.geolocation.clearWatch(liveGpsWatchId);
+  var firstPosition=true;
+  liveGpsWatchId=navigator.geolocation.watchPosition(pos=>{
+    updateLiveGpsPosition(pos,firstPosition);
+    firstPosition=false;
   },err=>{
+    if(liveGpsWatchId!==null)navigator.geolocation.clearWatch(liveGpsWatchId);
+    liveGpsWatchId=null;
     setLocationStatus('⚠️ GPS permission denied · using sandbox profile');
     updateWeatherUI('Orlando, FL');
     if(typeof logEvent==='function')logEvent('location_gps_denied',{code:err.code});
-  },{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
 }
 
 function handleZipOverride(val){
   var clean=(val||'').replace(/\D/g,'').substring(0,5);
   var inp=document.getElementById('pref-zipcode');if(inp&&inp.value!==clean)inp.value=clean;
   if(clean.length===5){
+    if(liveGpsWatchId!==null&&navigator.geolocation){navigator.geolocation.clearWatch(liveGpsWatchId);liveGpsWatchId=null;}
     var gps=document.getElementById('btn-gps-auto');if(gps)gps.classList.remove('on');
     fetchLocationByZip(clean);
   }else if(clean.length===0){
@@ -4705,6 +4729,7 @@ loadModuleUsage();
 // ════════════════════════════════════════════════════════════════
 var SEARCH_INDEX=[
   {ico:'🏠',label:'Home',kw:'home main start',go:()=>switchTab('home')},
+  {ico:'👤',label:'Change My Name / User Name',kw:'user name username profile name change my name what should vivo call me account name',go:()=>showAboutTotaVivo()},
   {ico:'☎',label:'Phone & Dial Pad',kw:'phone call dial number',go:()=>switchTab('phone')},
   {ico:'⭐',label:'Favorites — choose who you call',kw:'favorites favourite speed dial choose',go:()=>{switchTab('phone');setTimeout(()=>{if(typeof favEditMode!=='undefined'&&!favEditMode&&typeof toggleFavEdit==='function')toggleFavEdit();},200);}},
   {ico:'🆘',label:'Emergency / Call 911 / Find-Me Beacon',kw:'911 emergency help beacon sos flash alarm find me',go:()=>switchTab('phone')},
