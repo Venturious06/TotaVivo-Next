@@ -3,6 +3,6 @@
   "private": true,
   "version": "8.3.3",
   "scripts": {
-    "test": "node tests/smoke-test.js && node tests/core-modules-test.js && node tests/build-8.3-test.js && node tests/emergency-recording-test.js && node tests/location-search-test.js"
+    "test": "node tests/smoke-test.js && node tests/core-modules-test.js && node tests/build-8.3-test.js && node tests/emergency-recording-test.js && node tests/location-search-test.js && node tests/step-history-test.js"
   }
 }

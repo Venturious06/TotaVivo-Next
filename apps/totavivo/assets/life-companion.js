@@ -545,7 +545,7 @@ var SYNC_ACTIVITY_EVENTS=['call_initiated','911_initiated','video_call_initiated
   'contact_added','contact_edited','contact_deleted','contact_added_from_dialer',
   'earn_cashout','steps_goal_reached'];
 function loadSyncState(){try{var s=TotaStorage.getItem(SYNC_STATE_KEY);if(s)Object.assign(syncState,JSON.parse(s));}catch(e){}}
-function saveSyncState(){try{TotaStorage.setItem(SYNC_STATE_KEY,JSON.stringify(syncState));}catch(e){}}
+function saveSyncState(){try{TotaStorage.setItem(SYNC_STATE_KEY,JSON.stringify(syncState));}catch(e){}if(syncState.linked)setTimeout(function(){if(typeof syncPendingStepHistory==='function')syncPendingStepHistory();},0);}
 
 // ── CAREGIVER PREMIUM — $9.99/mo, builds on top of Sync. The free caregiver dashboard
 // (activity summary, inactivity alert, 1 caregiver) stays free forever; Premium only adds
@@ -1712,14 +1712,38 @@ function earnCashbackOnBill(rawAmt){
 // Persists per-day; feeds the "Walk 1,000 steps" earn task; shows on Home + Sensors.
 // ════════════════════════════════════════════════════════════════
 var STEP_KEY='totavivo_steps_v1';
-var stepState={day:null,steps:0,goal:1000,best:0};
+var stepState={day:null,steps:0,goal:1000,best:0,history:[]};
+function archiveCurrentSteps(){
+  if(!stepState.day)return;
+  if(!Array.isArray(stepState.history))stepState.history=[];
+  var existing=stepState.history.find(function(x){return x.day===stepState.day;});
+  if(existing){existing.steps=stepState.steps;}
+  else{stepState.history.push({day:stepState.day,steps:stepState.steps,synced:false});}
+  stepState.history=stepState.history.sort(function(a,b){return a.day.localeCompare(b.day);}).slice(-31);
+}
+function rollStepsToToday(){
+  if(stepState.day===todayKey())return false;
+  archiveCurrentSteps();
+  stepState.day=todayKey();stepState.steps=0;
+  saveSteps();syncPendingStepHistory();
+  return true;
+}
 function loadSteps(){try{var s=TotaStorage.getItem(STEP_KEY);if(s)Object.assign(stepState,JSON.parse(s));}catch(e){}
-  if(stepState.day!==todayKey()){stepState.day=todayKey();stepState.steps=0;saveSteps();}
+  if(!Array.isArray(stepState.history))stepState.history=[];
+  rollStepsToToday();
 }
 function saveSteps(){try{TotaStorage.setItem(STEP_KEY,JSON.stringify(stepState));}catch(e){}}
+function syncPendingStepHistory(){
+  if(!syncClient||!syncState||!syncState.linked||!syncState.householdId)return;
+  stepState.history.filter(function(x){return !x.synced;}).forEach(function(day){
+    syncClient.from('activity_log').insert({household_id:syncState.householdId,event_type:'steps_daily_total',detail:{day:day.day,steps:day.steps}}).then(function(res){
+      if(!res.error){day.synced=true;saveSteps();}
+    });
+  });
+}
 function addStep(n){
   n=n||1;
-  if(stepState.day!==todayKey()){stepState.day=todayKey();stepState.steps=0;}
+  rollStepsToToday();
   stepState.steps+=n;
   if(stepState.steps>stepState.best)stepState.best=stepState.steps;
   if(stepState.steps%20<n)saveSteps(); // throttle writes
@@ -1741,6 +1765,11 @@ function renderSteps(){
   var hp=document.getElementById('home-steps-pct');if(hp)hp.textContent=pct+'% of '+stepState.goal.toLocaleString()+' goal';
   // Sensors card
   var ss=document.getElementById('sensor-steps');if(ss)ss.innerHTML='<strong style="color:var(--green);font-size:18px">👟 '+stepState.steps.toLocaleString()+'</strong> steps today <span style="color:var(--sub)">· goal '+stepState.goal.toLocaleString()+' · best '+stepState.best.toLocaleString()+'</span>';
+  var sh=document.getElementById('sensor-steps-history');
+  if(sh){
+    var recent=(stepState.history||[]).slice(-7).reverse();
+    sh.innerHTML=recent.length?'<strong>Recent daily totals</strong><br>'+recent.map(function(x){return esc(x.day)+': '+Number(x.steps||0).toLocaleString()+' steps';}).join('<br>'):'Daily history will appear here tomorrow.';
+  }
   // Earn task live description
   var ed=document.getElementById('earn-steps-desc');
   if(ed){
@@ -1749,6 +1778,8 @@ function renderSteps(){
   }
 }
 function simulateSteps(n){addStep(n);showToast('👟 +'+n+' steps (demo)');speak('Added '+n+' demo steps. You are at '+stepState.steps.toLocaleString()+' steps today.');}
+window.addEventListener('pagehide',saveSteps);
+document.addEventListener('visibilitychange',function(){if(document.hidden)saveSteps();});
 
 // ═══ VIDEO CALL ═══
 var VIDEO_PROVIDER_KEY='totavivo_video_provider';
@@ -3060,6 +3091,7 @@ function openUpdateAndDismiss(){
 }
 function applyUpdateDismiss(){try{if(TotaStorage.getItem(UPD_DISMISS_KEY)==='1'){var btn=document.getElementById('upd-home-btn');if(btn)btn.style.display='none';}}catch(e){}}
 function dismissHomeCard(id){var el=document.getElementById(id);if(el){el.style.transition='opacity .25s';el.style.opacity='0';setTimeout(()=>el.style.display='none',250);}showToast('Dismissed');if(typeof logEvent==='function')logEvent('home_card_dismissed',{id:id});try{var dismissed=JSON.parse(TotaStorage.getItem('totavivo_dismissed_cards')||'[]');if(dismissed.indexOf(id)<0){dismissed.push(id);TotaStorage.setItem('totavivo_dismissed_cards',JSON.stringify(dismissed));}}catch(e){}}
+function dismissStepsCard(){dismissHomeCard('home-steps-card');showToast('👟 Steps card hidden · counting stays active');}
 function applyDismissedHomeCards(){try{var dismissed=JSON.parse(TotaStorage.getItem('totavivo_dismissed_cards')||'[]');dismissed.forEach(id=>{var el=document.getElementById(id);if(el)el.style.display='none';});}catch(e){}}
 
 // ════════════════════════════════════════════════════════════════
@@ -4877,7 +4909,7 @@ loadPermissionPrefs();
 autoResumeMotion();
 loadSyncState();
 loadSubState();
-if(syncState.linked){renderSyncUI();syncPullContacts();syncPullMeds();syncPullActivity();syncTouchLastActive();syncPullSubscription();}
+if(syncState.linked){renderSyncUI();syncPullContacts();syncPullMeds();syncPullActivity();syncTouchLastActive();syncPullSubscription();syncPendingStepHistory();}
 renderSubscriptionUI();
 buildNav();
 // Stamp the version label(s) from the single APP_VERSION constant
