@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.4';
+var APP_VERSION='8.3.5';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
