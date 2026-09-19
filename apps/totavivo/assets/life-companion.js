@@ -1203,7 +1203,7 @@ function startBeaconSiren(){
     if(!beacon.audioCtx||!beacon.osc)warmBeaconAudio(); // cold path (fall/911 not pre-warmed)
     if(!beacon.audioCtx||!beacon.gain||!beacon.osc)return;
     if(beacon.audioCtx.state==='suspended')beacon.audioCtx.resume();
-    beacon.gain.gain.linearRampToValueAtTime(0.9,beacon.audioCtx.currentTime+0.15); // ramp to loud
+    beacon.gain.gain.linearRampToValueAtTime(1,beacon.audioCtx.currentTime+0.15); // maximum app output; hardware volume remains user-controlled
     var hi=true;
     if(beacon.sirenTimer)clearInterval(beacon.sirenTimer);
     beacon.sirenTimer=setInterval(function(){
@@ -1229,6 +1229,10 @@ function silenceBeacon(){
   if(typeof logEvent==='function')logEvent('beacon_silenced');
 }
 function stopBeacon(){
+  if(beacon.mode==='panic'&&typeof panic!=='undefined'&&panic.fired&&!panic.practice){
+    if(!verifyGuardianCancelPin())return;
+    guardianCloseIncident('canceled_with_pin');panic.fired=false;
+  }
   beacon.on=false;
   if(beacon.flashTimer){clearInterval(beacon.flashTimer);beacon.flashTimer=null;}
   stopBeaconSiren();
@@ -1254,6 +1258,203 @@ function stopBeacon(){
 var PANIC_CANCEL_SEC=15; // ONE source of truth: caution text + countdown both read this
 var PANIC_HOLD_MS=1500;
 var panic={holding:false,fired:false,practice:false,holdStart:0,fillRAF:null,countTimer:null,autoClose:null,wake:null};
+var GUARDIAN_PIN_KEY='totavivo_guardian_cancel_pin_v1';
+var GUARDIAN_LOCATION_KEY='totavivo_guardian_location_v1';
+var GUARDIAN_INCIDENTS_KEY='totavivo_guardian_incidents_v1';
+var GUARDIAN_EVIDENCE_PREF_KEY='totavivo_guardian_evidence_pref_v1';
+var guardianEvidence={recorders:[],streams:[],chunks:[],timer:null,switchTimer:null,torchTimer:null,files:[],incidentId:null};
+
+function guardianPinDigest(pin){
+  var value=getAccountNumber()+':'+String(pin),hash=2166136261;
+  for(var i=0;i<value.length;i++){hash^=value.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  return ('00000000'+(hash>>>0).toString(16)).slice(-8);
+}
+function guardianHasPin(){try{return !!TotaStorage.getItem(GUARDIAN_PIN_KEY);}catch(_){return false;}}
+function setGuardianCancelPin(){
+  var pin=window.prompt('Create a 4-digit PIN to cancel a real personal alarm. Keep it somewhere safe.');
+  if(pin===null)return false;
+  if(!/^\d{4}$/.test(pin)){showToast('PIN must be exactly 4 numbers');return false;}
+  var confirmPin=window.prompt('Enter the same 4-digit PIN again.');
+  if(confirmPin!==pin){showToast('PINs did not match');return false;}
+  try{TotaStorage.setItem(GUARDIAN_PIN_KEY,guardianPinDigest(pin));}catch(_){showToast('PIN could not be saved on this device');return false;}
+  showToast('🔒 Personal alarm cancellation PIN saved');
+  renderGuardianLoadout();
+  if(typeof logEvent==='function')logEvent('guardian_cancel_pin_set');
+  return true;
+}
+function verifyGuardianCancelPin(){
+  if(!guardianHasPin())return setGuardianCancelPin();
+  var pin=window.prompt('Enter your 4-digit PIN to cancel the personal alarm.');
+  if(pin===null)return false;
+  var saved='';try{saved=TotaStorage.getItem(GUARDIAN_PIN_KEY)||'';}catch(_){}
+  if(!/^\d{4}$/.test(pin)||guardianPinDigest(pin)!==saved){
+    showToast('Incorrect PIN — the alarm is still on');
+    if(typeof logEvent==='function')logEvent('guardian_cancel_pin_failed');
+    return false;
+  }
+  return true;
+}
+function guardianReadJSON(key,fallback){try{return JSON.parse(TotaStorage.getItem(key)||'null')||fallback;}catch(_){return fallback;}}
+function guardianWriteJSON(key,value){try{TotaStorage.setItem(key,JSON.stringify(value));}catch(_){}}
+function guardianLocationPoint(location){
+  if(!location||location.lat==null||location.lng==null)return null;
+  return {lat:String(location.lat),lng:String(location.lng),acc:Number(location.acc)||null,recordedAt:new Date().toISOString()};
+}
+function trackGuardianLocation(location){
+  var point=guardianLocationPoint(location);if(!point)return;
+  var history=guardianReadJSON(GUARDIAN_LOCATION_KEY,{current:null,previous:null});
+  if(history.current&&(history.current.lat!==point.lat||history.current.lng!==point.lng))history.previous=history.current;
+  history.current=point;guardianWriteJSON(GUARDIAN_LOCATION_KEY,history);
+}
+function guardianLocationSnapshot(){
+  var history=guardianReadJSON(GUARDIAN_LOCATION_KEY,{current:null,previous:null});
+  var live=(typeof sensorState!=='undefined'&&sensorState&&sensorState.location)?guardianLocationPoint(sensorState.location):null;
+  if(live){trackGuardianLocation(live);history=guardianReadJSON(GUARDIAN_LOCATION_KEY,history);}
+  return {current:history.current||null,previous:history.previous||null};
+}
+function guardianBeginIncident(){
+  var incidents=guardianReadJSON(GUARDIAN_INCIDENTS_KEY,[]),snap=guardianLocationSnapshot();
+  incidents.unshift({id:'alarm-'+Date.now(),startedAt:new Date().toISOString(),endedAt:null,status:'active',currentLocation:snap.current,previousLocation:snap.previous});
+  guardianWriteJSON(GUARDIAN_INCIDENTS_KEY,incidents.slice(0,25));
+}
+function guardianRefreshActiveIncident(){
+  var incidents=guardianReadJSON(GUARDIAN_INCIDENTS_KEY,[]);if(!incidents.length||incidents[0].status!=='active')return;
+  var snap=guardianLocationSnapshot();incidents[0].currentLocation=snap.current;incidents[0].previousLocation=snap.previous;
+  guardianWriteJSON(GUARDIAN_INCIDENTS_KEY,incidents);
+}
+function guardianCloseIncident(status){
+  var incidents=guardianReadJSON(GUARDIAN_INCIDENTS_KEY,[]),snap=guardianLocationSnapshot();
+  if(incidents.length&&incidents[0].status==='active'){
+    incidents[0].status=status||'canceled_with_pin';incidents[0].endedAt=new Date().toISOString();
+    incidents[0].currentLocation=snap.current;incidents[0].previousLocation=snap.previous;
+    guardianWriteJSON(GUARDIAN_INCIDENTS_KEY,incidents);
+  }
+}
+function guardianPointText(point){return point?(point.lat+', '+point.lng+' · '+new Date(point.recordedAt).toLocaleString()):'Not available';}
+function guardianEvidencePref(){
+  var pref=guardianReadJSON(GUARDIAN_EVIDENCE_PREF_KEY,{enabled:false,duration:30,storage:'device'});
+  pref.enabled=!!pref.enabled;pref.duration=[30,45,60].indexOf(Number(pref.duration))>=0?Number(pref.duration):30;
+  pref.storage=['device','personal','guardian'].indexOf(pref.storage)>=0?pref.storage:'device';return pref;
+}
+function guardianCloudActive(){return subState&&subState.status==='active'&&(subState.tier==='guardian_cloud'||subState.tier==='guardian_bundle');}
+function chooseGuardianStorage(mode){
+  if(['device','personal','guardian'].indexOf(mode)<0)return;
+  if(mode==='guardian'&&!guardianCloudActive()){
+    showToast('Guardian Cloud requires a separate paid plan. Pricing and consent must be shown before checkout.');
+    joinGuardianWaitlist();return;
+  }
+  var pref=guardianEvidencePref();pref.storage=mode;guardianWriteJSON(GUARDIAN_EVIDENCE_PREF_KEY,pref);renderGuardianLoadout();
+}
+function guardianEvidenceDb(){
+  return new Promise(function(resolve,reject){
+    if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return;}
+    var req=indexedDB.open('totavivo_guardian_evidence_v1',1);
+    req.onupgradeneeded=function(){var db=req.result;if(!db.objectStoreNames.contains('recordings'))db.createObjectStore('recordings',{keyPath:'name'});};
+    req.onsuccess=function(){resolve(req.result);};req.onerror=function(){reject(req.error||new Error('Device storage unavailable'));};
+  });
+}
+async function persistGuardianEvidence(item){
+  var db=await guardianEvidenceDb();
+  return new Promise(function(resolve,reject){var tx=db.transaction('recordings','readwrite');tx.objectStore('recordings').put({name:item.name,label:item.label,blob:item.blob,createdAt:new Date().toISOString(),uploaded:item.uploaded,path:item.path});tx.oncomplete=function(){db.close();resolve();};tx.onerror=function(){db.close();reject(tx.error);};});
+}
+async function loadGuardianEvidenceFiles(){
+  try{
+    var db=await guardianEvidenceDb(),rows=await new Promise(function(resolve,reject){var tx=db.transaction('recordings','readonly'),req=tx.objectStore('recordings').getAll();req.onsuccess=function(){resolve(req.result||[]);};req.onerror=function(){reject(req.error);};});db.close();
+    guardianEvidence.files.forEach(function(f){if(f.url)URL.revokeObjectURL(f.url);});
+    guardianEvidence.files=rows.sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt));}).slice(0,25).map(function(row){return {label:row.label,name:row.name,blob:row.blob,url:URL.createObjectURL(row.blob),uploaded:!!row.uploaded,path:row.path||null};});
+    renderGuardianLoadout();
+  }catch(_){}
+}
+function setGuardianEvidenceDuration(seconds){
+  var pref=guardianEvidencePref();pref.duration=[30,45,60].indexOf(Number(seconds))>=0?Number(seconds):30;
+  guardianWriteJSON(GUARDIAN_EVIDENCE_PREF_KEY,pref);renderGuardianLoadout();showToast('Evidence recording set to '+pref.duration+' seconds');
+}
+function toggleGuardianEvidence(){
+  var pref=guardianEvidencePref();
+  if(!pref.enabled&&!window.confirm('Enable Guardian Self-Defense Beacon and evidence capture? During a real personal alarm, TotaVivo will request camera and microphone access, try both cameras, and save the recording privately. Supported phones also pulse the outward light to attract attention and illuminate a route to safety. Never aim flashing light at faces, eyes, drivers, or traffic. Audio-recording laws vary by location. Use only for lawful personal safety and documentation.'))return;
+  pref.enabled=!pref.enabled;guardianWriteJSON(GUARDIAN_EVIDENCE_PREF_KEY,pref);renderGuardianLoadout();
+  showToast(pref.enabled?'📹 Emergency evidence capture enabled':'Emergency evidence capture off');
+}
+function guardianRecorderMime(){
+  var choices=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+  for(var i=0;i<choices.length;i++)if(typeof MediaRecorder!=='undefined'&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(choices[i]))return choices[i];
+  return '';
+}
+function guardianStartRecorder(stream,label){
+  var mime=guardianRecorderMime(),options=mime?{mimeType:mime}:undefined,rec=new MediaRecorder(stream,options),chunks=[];
+  rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
+  rec.onstop=function(){
+    if(!chunks.length)return;
+    var type=rec.mimeType||mime||'video/webm',blob=new Blob(chunks,{type:type});
+    saveGuardianEvidenceBlob(label,blob,guardianEvidence.incidentId);
+  };
+  rec.start(1000);guardianEvidence.recorders.push(rec);guardianEvidence.streams.push(stream);guardianEvidence.chunks.push(chunks);return rec;
+}
+async function guardianTryTorch(stream){
+  var track=stream&&stream.getVideoTracks&&stream.getVideoTracks()[0];if(!track||!track.getCapabilities)return;
+  var caps={};try{caps=track.getCapabilities()||{};}catch(_){return;}if(!caps.torch)return;
+  var on=false;
+  guardianEvidence.torchTimer=setInterval(function(){on=!on;track.applyConstraints({advanced:[{torch:on}]}).catch(function(){});},800);
+}
+async function startGuardianEvidenceCapture(){
+  var pref=guardianEvidencePref();if(!pref.enabled)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==='undefined'){
+    showToast('Camera recording is not supported in this browser');return;
+  }
+  guardianEvidence.incidentId='guardian-'+Date.now();guardianEvidence.recorders=[];guardianEvidence.streams=[];guardianEvidence.chunks=[];
+  try{
+    var front=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});guardianStartRecorder(front,'front');
+    try{var rear=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:'environment'}},audio:false});guardianStartRecorder(rear,'rear');guardianTryTorch(rear);}catch(rearErr){
+      if(typeof logEvent==='function')logEvent('guardian_rear_camera_unavailable',{name:rearErr&&rearErr.name});
+      guardianEvidence.switchTimer=setTimeout(async function(){
+        try{
+          guardianEvidence.recorders.forEach(function(r){try{if(r.state!=='inactive')r.stop();}catch(_){}});
+          guardianEvidence.streams.forEach(function(s){try{s.getTracks().forEach(function(t){t.stop();});}catch(_){}});
+          guardianEvidence.recorders=[];guardianEvidence.streams=[];
+          var rearFallback=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:'environment'}},audio:true});
+          guardianStartRecorder(rearFallback,'rear');guardianTryTorch(rearFallback);showToast('📹 Switched to outward safety camera');
+        }catch(fallbackErr){if(typeof logEvent==='function')logEvent('guardian_rear_camera_fallback_failed',{name:fallbackErr&&fallbackErr.name});}
+      },Math.floor(pref.duration/2)*1000);
+    }
+    guardianEvidence.timer=setTimeout(stopGuardianEvidenceCapture,pref.duration*1000);
+    showToast('📹 Safety recording started for '+pref.duration+' seconds');
+    if(typeof logEvent==='function')logEvent('guardian_evidence_started',{duration_s:pref.duration,cameras:guardianEvidence.recorders.length});
+  }catch(err){
+    stopGuardianEvidenceCapture();showToast('Camera or microphone permission was not granted');
+    if(typeof logEvent==='function')logEvent('guardian_evidence_permission_failed',{name:err&&err.name});
+  }
+}
+function stopGuardianEvidenceCapture(){
+  if(guardianEvidence.timer){clearTimeout(guardianEvidence.timer);guardianEvidence.timer=null;}
+  if(guardianEvidence.switchTimer){clearTimeout(guardianEvidence.switchTimer);guardianEvidence.switchTimer=null;}
+  if(guardianEvidence.torchTimer){clearInterval(guardianEvidence.torchTimer);guardianEvidence.torchTimer=null;}
+  guardianEvidence.recorders.forEach(function(r){try{if(r.state!=='inactive')r.stop();}catch(_){}});
+  guardianEvidence.streams.forEach(function(s){try{s.getTracks().forEach(function(t){if(t.kind==='video'&&t.applyConstraints)t.applyConstraints({advanced:[{torch:false}]}).catch(function(){});t.stop();});}catch(_){}});
+  guardianEvidence.recorders=[];guardianEvidence.streams=[];
+}
+async function saveGuardianEvidenceBlob(label,blob,incidentId){
+  var ext=blob.type.indexOf('mp4')>=0?'mp4':'webm',fileName=(incidentId||('guardian-'+Date.now()))+'-'+label+'.'+ext;
+  var item={label:label,name:fileName,blob:blob,url:URL.createObjectURL(blob),uploaded:false,path:null};guardianEvidence.files.unshift(item);
+  try{await persistGuardianEvidence(item);showToast('📱 '+label+' safety recording saved on this device first');}catch(_){showToast('Device storage could not keep the recording — download it now');}
+  var pref=guardianEvidencePref();
+  if(pref.storage==='guardian'&&guardianCloudActive()&&syncClient&&syncState&&syncState.userId){
+    var path=syncState.userId+'/'+fileName;
+    try{var result=await syncClient.storage.from('guardian-evidence').upload(path,blob,{contentType:blob.type,upsert:false});
+      if(!result.error){item.uploaded=true;item.path=path;await persistGuardianEvidence(item);showToast('☁️ '+label+' safety recording uploaded to paid Guardian Cloud');}
+      else showToast('Recording saved on this device; cloud upload is not configured yet');
+    }catch(_){showToast('Recording saved on this device; cloud upload unavailable');}
+  }else if(pref.storage==='personal')showToast('Recording is on this device. Use Share / Save to Cloud for your personal cloud.');
+  if(typeof logEvent==='function')logEvent('guardian_evidence_saved',{camera:label,uploaded:item.uploaded,size_kb:Math.round(blob.size/1024)});
+}
+function downloadGuardianEvidence(index){
+  var item=guardianEvidence.files[index];if(!item)return;var a=document.createElement('a');a.href=item.url;a.download=item.name;document.body.appendChild(a);a.click();a.remove();
+}
+async function shareGuardianEvidence(index){
+  var item=guardianEvidence.files[index];if(!item)return;
+  var file=new File([item.blob],item.name,{type:item.blob.type});
+  if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({title:'TotaVivo safety recording',files:[file]});return;}catch(_){}}
+  downloadGuardianEvidence(index);showToast('Use your phone’s Save to Files option to place it in your cloud account');
+}
 
 function guardianContacts(){
   var list=(typeof emergencyContacts!=='undefined'?emergencyContacts:[]);
@@ -1300,6 +1501,24 @@ function renderGuardianLoadout(){
   }
   html+='<div class="panic-row"><span class="pr-ic">📍</span><span>'+(hasLoc?'Location ready — your spot can be shared':'Location off — turn it on so people can find you')+'</span><span class="panic-chip '+(hasLoc?'ok':'no')+'">'+(hasLoc?'ON':'OFF')+'</span></div>';
   html+='<div class="panic-row"><span class="pr-ic">📳</span><span>'+(canBuzz?'Your phone will buzz':'This phone can\'t buzz (siren &amp; lights still work)')+'</span></div>';
+  html+='<div class="panic-row"><span class="pr-ic">🔒</span><span>Cancellation PIN</span><span class="panic-chip '+(guardianHasPin()?'ok':'no')+'">'+(guardianHasPin()?'SET':'REQUIRED')+'</span></div>';
+  html+='<button class="panic-practice" type="button" onclick="setGuardianCancelPin()" style="width:100%;margin:7px 0">'+(guardianHasPin()?'Change cancellation PIN':'Set cancellation PIN')+'</button>';
+  var evidence=guardianEvidencePref();
+  html+='<div class="panic-row"><span class="pr-ic">📹</span><span>Guardian Self-Defense Beacon + evidence</span><span class="panic-chip '+(evidence.enabled?'ok':'no')+'">'+(evidence.enabled?'ON':'OFF')+'</span></div>';
+  html+='<button class="panic-practice" type="button" onclick="toggleGuardianEvidence()" style="width:100%;margin:7px 0">'+(evidence.enabled?'Turn evidence capture off':'Enable evidence capture')+'</button>';
+  html+='<div class="panic-row" style="justify-content:center;gap:6px"><span>Record:</span>';
+  [30,45,60].forEach(function(sec){html+='<button class="panic-chip '+(evidence.duration===sec?'ok':'')+'" type="button" onclick="setGuardianEvidenceDuration('+sec+')">'+sec+' sec</button>';});
+  html+='</div>';
+  html+='<div class="panic-row" style="display:block"><b>Where recordings go after saving to this device:</b><br>'+
+    '<button class="panic-chip '+(evidence.storage==='device'?'ok':'')+'" onclick="chooseGuardianStorage(\'device\')">Device only</button> '+
+    '<button class="panic-chip '+(evidence.storage==='personal'?'ok':'')+'" onclick="chooseGuardianStorage(\'personal\')">My cloud</button> '+
+    '<button class="panic-chip '+(evidence.storage==='guardian'?'ok':'')+'" onclick="chooseGuardianStorage(\'guardian\')">Guardian Cloud · paid</button></div>';
+  html+='<div class="panic-row" style="display:block;color:#9fc4dd">Recordings save to device storage first. Personal cloud transfer requires you to use Share / Save to Cloud. Guardian Cloud requires a separate active paid plan and internet connection.</div>';
+  html+='<div class="panic-row" style="display:block;color:#9fc4dd"><b>Emergency self-defense use only:</b> attract attention, illuminate a route to safety, and document the surroundings and people involved. Attempts front and rear cameras with microphone; some phones allow only one camera at a time. The app uses its loudest siren output, but websites cannot override your phone’s hardware volume. The outward light pulses only when supported. <b>Never aim it at faces, eyes, drivers, or traffic.</b></div>';
+  html+='<div class="panic-row" style="display:block;color:#ffcf70"><b>Recording disclaimer:</b> TotaVivo does not guarantee that a recording will start, capture every person or sound, remain clear, upload successfully, or be recoverable. Quality depends on the phone, permissions, available storage, battery, lighting, camera position, browser support, and internet connection.</div>';
+  var records=guardianReadJSON(GUARDIAN_INCIDENTS_KEY,[]);
+  if(records.length){var recent=records[0];html+='<div class="panic-row" style="display:block"><b>Most recent alarm record</b><br><span style="color:#9fc4dd">Current GPS: '+esc(guardianPointText(recent.currentLocation))+'<br>Previous GPS: '+esc(guardianPointText(recent.previousLocation))+'</span></div>';}
+  guardianEvidence.files.forEach(function(file,index){html+='<div class="panic-row" style="display:block"><b>'+esc(file.label)+' safety recording</b> · '+(file.uploaded?'Private server copy saved':'Device copy ready')+'<br><button class="panic-chip ok" onclick="shareGuardianEvidence('+index+')">Share / Save to Cloud</button> <button class="panic-chip" onclick="downloadGuardianEvidence('+index+')">Download</button></div>';});
   html+='<div class="panic-row"><span class="pr-ic">▶️</span><span>Siren + lights start <b>immediately</b> &rarr; <b>'+PANIC_CANCEL_SEC+' seconds</b> to press I\'m Safe &rarr; then big buttons to call 911 and your family.</span></div>';
   el.innerHTML=html;
 }
@@ -1307,6 +1526,7 @@ function openGuardian(){
   var ov=document.getElementById('panic-ov');if(!ov)return;
   panic.fired=false;panic.holding=false;
   renderGuardianCaution();renderGuardianLoadout();resetPanicFireButton();
+  loadGuardianEvidenceFiles();
   ov.classList.add('show');ov.scrollTop=0;
   if('wakeLock' in navigator){navigator.wakeLock.request('screen').then(function(w){panic.wake=w;}).catch(function(){});}
   speak('Safety alarm ready. Press and hold the big red button to sound the alarm, or tap Try it to practice.');
@@ -1402,9 +1622,12 @@ function fireGuardian(practice){
   if(typeof logEvent==='function')logEvent('panic_fired',{practice:!!practice});
 }
 function soundGuardianAlarm(){
+  guardianBeginIncident();
   startEmergencyBeacon('panic'); // instant real siren + lights + vibrate (uses the warmed audio)
+  startGuardianEvidenceCapture();
   try{ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(function(pos){
     if(typeof sensorState!=='undefined'&&sensorState) sensorState.location={lat:pos.coords.latitude.toFixed(5),lng:pos.coords.longitude.toFixed(5),acc:Math.round(pos.coords.accuracy)};
+    trackGuardianLocation(sensorState.location);guardianRefreshActiveIncident();
   },function(){},{enableHighAccuracy:true,timeout:8000,maximumAge:30000}); }catch(_){}
   showPanicCountdown();
   speak('The alarm is on. If this was a mistake, press I am safe. If you are in danger, press Call 911 to reach help yourself.');
@@ -1413,7 +1636,7 @@ function showPanicCountdown(){
   var el=document.getElementById('beacon-panic');if(!el)return;
   var n=PANIC_CANCEL_SEC;
   el.innerHTML=
-    '<button class="bp-safe" onclick="panicImSafe()">✅ I\'M SAFE<span class="bps-sub">Tap to stop everything</span></button>'+
+    '<button class="bp-safe" onclick="panicImSafe()">✅ I\'M SAFE<span class="bps-sub">Enter PIN to stop everything</span></button>'+
     '<div class="bp-count" id="bp-count">Your help buttons appear in '+n+'s — press I\'m Safe if this was a mistake.</div>'+
     '<button class="bp-btn silence" onclick="silenceBeacon()">🔇 Silence (lights keep flashing)</button>'+
     '<button class="bp-btn call911" onclick="showPanicHelp()">📞 Call 911 now</button>'+emergencyRecordAction();
@@ -1428,7 +1651,7 @@ function showPanicHelp(){
   if(panic.countTimer){clearInterval(panic.countTimer);panic.countTimer=null;}
   var el=document.getElementById('beacon-panic');if(!el)return;
   var contacts=guardianContacts();var loc=guardianLocationLink();
-  var html='<button class="bp-safe" onclick="panicImSafe()">✅ I\'M SAFE<span class="bps-sub">Tap to stop everything</span></button>';
+  var html='<button class="bp-safe" onclick="panicImSafe()">✅ I\'M SAFE<span class="bps-sub">Enter PIN to stop everything</span></button>';
   html+='<a class="bp-btn call911" href="tel:911" onclick="if(typeof logEvent===\'function\')logEvent(\'panic_911_tapped\')" style="display:flex;align-items:center;justify-content:center;text-decoration:none">📞 CALL 911</a>';
   html+='<div class="bp-cap">Tap to call 911 — this opens your phone\'s dialer. You press the green Call button. Connecting depends on your phone &amp; signal.</div>';
   contacts.forEach(function(c){
@@ -1446,7 +1669,10 @@ function showPanicHelp(){
   speak('If you need help, press the red Call 911 button to call for help yourself.');
 }
 function panicImSafe(){
+  if(!panic.practice&&!verifyGuardianCancelPin())return;
   if(panic.countTimer){clearInterval(panic.countTimer);panic.countTimer=null;}
+  guardianCloseIncident('canceled_with_pin');
+  stopGuardianEvidenceCapture();
   panic.fired=false;
   stopBeacon();
   if(typeof logEvent==='function')logEvent('panic_canceled');
@@ -3206,6 +3432,7 @@ async function updateLiveGpsPosition(pos,announce){
   var lat=pos.coords.latitude,lon=pos.coords.longitude;
   if(typeof sensorState!=='undefined'&&sensorState){
     sensorState.location={lat:lat.toFixed(5),lng:lon.toFixed(5),acc:Math.round(pos.coords.accuracy)};
+    trackGuardianLocation(sensorState.location);
   }
   setLocationStatus('📍 Live while TotaVivo is open · accuracy ±'+Math.round(pos.coords.accuracy)+'m');
   var now=Date.now();
@@ -3762,9 +3989,9 @@ function requestLocation(){
   if(!navigator.geolocation){showToast('Geolocation not supported');return;}
   logEvent('permission_requested',{sensor:'location'});
   navigator.geolocation.getCurrentPosition(
-    pos=>{sensorState.location={lat:pos.coords.latitude.toFixed(4),lng:pos.coords.longitude.toFixed(4),acc:Math.round(pos.coords.accuracy)};logEvent('permission_granted',{sensor:'location'});showToast('📍 Location granted');renderSensorHub();
+    pos=>{sensorState.location={lat:pos.coords.latitude.toFixed(4),lng:pos.coords.longitude.toFixed(4),acc:Math.round(pos.coords.accuracy)};trackGuardianLocation(sensorState.location);logEvent('permission_granted',{sensor:'location'});showToast('📍 Location granted');renderSensorHub();
       // Continuous watch for family location sharing
-      navigator.geolocation.watchPosition(p=>{sensorState.location={lat:p.coords.latitude.toFixed(4),lng:p.coords.longitude.toFixed(4),acc:Math.round(p.coords.accuracy)};renderSensorHub();},()=>{},{enableHighAccuracy:false,timeout:30000,maximumAge:60000});
+      navigator.geolocation.watchPosition(p=>{sensorState.location={lat:p.coords.latitude.toFixed(4),lng:p.coords.longitude.toFixed(4),acc:Math.round(p.coords.accuracy)};trackGuardianLocation(sensorState.location);renderSensorHub();},()=>{},{enableHighAccuracy:false,timeout:30000,maximumAge:60000});
     },
     err=>{logEvent('permission_denied',{sensor:'location',code:err.code});showToast('Location denied');renderSensorHub();},
     {enableHighAccuracy:true,timeout:10000,maximumAge:5000}

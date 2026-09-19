@@ -1,0 +1,26 @@
+const fs=require('fs');
+const assert=require('assert');
+const js=fs.readFileSync('apps/totavivo/assets/life-companion.js','utf8');
+const html=fs.readFileSync('apps/totavivo/life-companion.html','utf8');
+const privacy=fs.readFileSync('apps/totavivo/privacy.html','utf8');
+const terms=fs.readFileSync('apps/totavivo/terms.html','utf8');
+const storageSql=fs.readFileSync('supabase/migrations/20260919_guardian_evidence.sql','utf8');
+
+['GUARDIAN_PIN_KEY','setGuardianCancelPin','verifyGuardianCancelPin','guardianBeginIncident','guardianCloseIncident','currentLocation','previousLocation'].forEach(x=>assert(js.includes(x),x));
+assert(js.includes("if(!panic.practice&&!verifyGuardianCancelPin())return"),'real Guardian cancellation requires the PIN');
+assert(!js.includes("if(!practice&&!guardianHasPin())"),'real Guardian activation remains immediate without PIN setup');
+assert(js.includes("incidents.slice(0,25)"),'alarm records are bounded');
+['GUARDIAN_EVIDENCE_PREF_KEY','startGuardianEvidenceCapture','facingMode:\'user\'','facingMode:{exact:\'environment\'}','torch:on','guardian-evidence','Share / Save to Cloud'].forEach(x=>assert(js.includes(x),x));
+assert(js.includes('maximum app output; hardware volume remains user-controlled'),'siren uses maximum app output honestly');
+assert(js.includes('Switched to outward safety camera'),'single-camera phones switch from selfie to outward recording');
+assert(storageSql.includes("public, file_size_limit"),'evidence bucket is private and size bounded');
+assert(storageSql.includes("auth.uid()::text"),'storage policy confines evidence to the signed-in user');
+assert(storageSql.includes("s.tier in ('guardian_cloud','guardian_bundle')"),'server storage requires a paid Guardian entitlement');
+assert(js.includes('Enter PIN to stop everything'),'Guardian explains PIN cancellation');
+assert(html.includes("I'm Safe — Turn Off Beacon"),'generic beacon remains available without a Guardian PIN');
+assert(privacy.includes('current and immediately previous GPS fixes'),'privacy notice covers local alarm locations');
+assert(js.includes('Never aim it at faces, eyes, drivers, or traffic'),'torch has an explicit safety warning');
+assert(js.includes('Emergency self-defense use only'),'feature is scoped to emergency self-defense');
+['indexedDB','persistGuardianEvidence','Device only','My cloud','Guardian Cloud · paid','guardianCloudActive'].forEach(x=>assert(js.includes(x),x));
+assert(terms.includes('Any guarantee that Guardian video or audio evidence'),'terms disclose recording limitations');
+console.log('Guardian PIN and location record tests passed');
