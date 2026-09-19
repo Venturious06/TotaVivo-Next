@@ -1505,7 +1505,8 @@ function renderGuardianLoadout(){
   html+='<button class="panic-practice" type="button" onclick="setGuardianCancelPin()" style="width:100%;margin:7px 0">'+(guardianHasPin()?'Change cancellation PIN':'Set cancellation PIN')+'</button>';
   var evidence=guardianEvidencePref();
   html+='<div class="panic-row"><span class="pr-ic">📹</span><span>Guardian Self-Defense Beacon + evidence</span><span class="panic-chip '+(evidence.enabled?'ok':'no')+'">'+(evidence.enabled?'ON':'OFF')+'</span></div>';
-  html+='<button class="panic-practice" type="button" onclick="toggleGuardianEvidence()" style="width:100%;margin:7px 0">'+(evidence.enabled?'Turn evidence capture off':'Enable evidence capture')+'</button>';
+  var evidenceToggle=document.getElementById('guardian-evidence-toggle');
+  if(evidenceToggle)evidenceToggle.textContent=evidence.enabled?'📹 Turn evidence capture off':'📹 Enable evidence capture';
   html+='<div class="panic-row" style="justify-content:center;gap:6px"><span>Record:</span>';
   [30,45,60].forEach(function(sec){html+='<button class="panic-chip '+(evidence.duration===sec?'ok':'')+'" type="button" onclick="setGuardianEvidenceDuration('+sec+')">'+sec+' sec</button>';});
   html+='</div>';

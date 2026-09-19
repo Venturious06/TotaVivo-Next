@@ -21,6 +21,10 @@ assert(html.includes("I'm Safe — Turn Off Beacon"),'generic beacon remains ava
 assert(privacy.includes('current and immediately previous GPS fixes'),'privacy notice covers local alarm locations');
 assert(js.includes('Never aim it at faces, eyes, drivers, or traffic'),'torch has an explicit safety warning');
 assert(js.includes('Emergency self-defense use only'),'feature is scoped to emergency self-defense');
+const registryButton=html.indexOf('Check the Nationwide Registry');
+const evidenceButton=html.indexOf('id="guardian-evidence-toggle"');
+const alarmButton=html.indexOf('id="panic-fire"');
+assert(registryButton>=0&&registryButton<evidenceButton&&evidenceButton<alarmButton,'evidence capture sits between registry check and alarm button');
 ['indexedDB','persistGuardianEvidence','Device only','My cloud','Guardian Cloud · paid','guardianCloudActive'].forEach(x=>assert(js.includes(x),x));
 assert(terms.includes('Any guarantee that Guardian video or audio evidence'),'terms disclose recording limitations');
 console.log('Guardian PIN and location record tests passed');

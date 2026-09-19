@@ -1,3 +1,10 @@
+alter table public.subscriptions
+  drop constraint if exists subscriptions_tier_check;
+
+alter table public.subscriptions
+  add constraint subscriptions_tier_check
+  check (tier in ('free', 'caregiver_premium', 'guardian_cloud', 'guardian_bundle'));
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('guardian-evidence', 'guardian-evidence', false, 104857600, array['video/webm','video/mp4'])
 on conflict (id) do update set public=false, file_size_limit=104857600, allowed_mime_types=array['video/webm','video/mp4'];
