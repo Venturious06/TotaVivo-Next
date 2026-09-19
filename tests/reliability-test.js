@@ -15,6 +15,7 @@ assert(app.includes('TotaReliability.track'),'app events reach sanitized telemet
 assert(sw.includes('assets/core/reliability.js'),'reliability layer is available offline');
 assert(sql.includes('enable row level security'),'telemetry uses RLS');
 assert(sql.includes('for insert'),'clients only receive an insert policy');
+assert(sql.includes('drop policy if exists'),'migration can be safely rerun');
 assert(sql.includes('octet_length(details::text) <= 4096'),'telemetry detail size is bounded compatibly');
 assert(!sql.includes('jsonb_object_length'),'migration avoids unavailable JSON function');
 console.log('Reliability, analytics, update and offline tests passed');

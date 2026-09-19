@@ -18,6 +18,8 @@ revoke all on table public.app_telemetry from anon, authenticated;
 grant insert on table public.app_telemetry to anon, authenticated;
 grant usage, select on sequence public.app_telemetry_id_seq to anon, authenticated;
 
+drop policy if exists "clients can submit telemetry" on public.app_telemetry;
+
 create policy "clients can submit telemetry"
 on public.app_telemetry for insert
 to anon, authenticated
