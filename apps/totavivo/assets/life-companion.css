@@ -736,6 +736,32 @@ body.big-text .screen{zoom:1.18;}
 .panic-practice{flex:1;min-width:150px;min-height:52px;border-radius:12px;border:1.5px solid rgba(120,170,210,.5);background:rgba(74,144,226,.12);color:#cfe6f5;font-size:13px;font-weight:800;cursor:pointer;}
 .panic-close{flex:1;min-width:150px;min-height:52px;border-radius:12px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:13px;font-weight:800;cursor:pointer;}
 .panic-about{width:100%;text-align:center;font-size:11px;color:#9fc4dd;text-decoration:underline;background:none;border:none;cursor:pointer;padding:6px;}
+.community-entry{border-color:rgba(54,211,198,.48);background:rgba(54,211,198,.08);}
+.community-entry-copy{font-size:12px;line-height:1.5;color:#dfeaf3;margin-bottom:10px;}
+.community-primary{width:100%;min-height:50px;border:0;border-radius:12px;background:linear-gradient(135deg,#43ddd0,#82f0d2);color:#062a38;font-size:14px;font-weight:900;padding:10px 12px;cursor:pointer;}
+.community-ov{position:absolute;inset:0;z-index:1750;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;background:rgba(2,12,25,.96);padding:calc(env(safe-area-inset-top,0px) + 14px) 12px calc(env(safe-area-inset-bottom,0px) + 24px);}
+.community-ov.show{display:flex;}
+.community-panel{width:100%;max-width:430px;background:#0b2941;border:1.5px solid rgba(54,211,198,.5);border-radius:16px;padding:14px;box-shadow:0 12px 34px rgba(0,0,0,.42);}
+.community-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.community-hd .modal-x{position:relative;top:auto;right:auto;flex:0 0 38px;width:38px;height:38px;}
+.community-kicker{font-size:10px;font-weight:900;letter-spacing:1px;color:#43ddd0;}
+.community-title{font-size:21px;font-weight:900;color:#fff;margin-top:2px;}
+.community-status{border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:13px;font-weight:800;line-height:1.45;background:rgba(54,211,198,.12);border:1px solid rgba(54,211,198,.45);color:#dffcf8;}
+.community-status[data-level="caution"]{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.55);color:#ffe4a0;}
+.community-status[data-level="immediate"]{background:rgba(255,92,122,.13);border-color:rgba(255,92,122,.6);color:#ffd9e0;}
+.community-notice{font-size:12px;line-height:1.5;color:#d9e8f2;background:rgba(255,255,255,.05);border-radius:12px;padding:11px;margin-bottom:10px;}
+.community-notice b{color:var(--tv-gold-bright);}
+.community-levels{display:grid;gap:6px;margin:10px 0;}
+.community-level{display:grid;grid-template-columns:92px 1fr;gap:7px;border-radius:10px;padding:8px 9px;background:rgba(255,255,255,.04);font-size:10px;line-height:1.4;color:#bcd2e1;}
+.community-level b{color:#fff;font-size:11px;}.community-level.info{border-left:4px solid #43ddd0}.community-level.caution{border-left:4px solid #ffd166}.community-level.immediate{border-left:4px solid #ff5c7a}
+.community-primary.nationwide{margin:8px 0;min-height:58px;font-size:15px;}
+.community-secondary-grid,.community-action-grid{display:grid;gap:7px;margin-top:7px;}.community-secondary-grid{grid-template-columns:1fr 1fr}.community-action-grid{grid-template-columns:repeat(3,1fr)}
+.community-secondary-grid button,.community-action-grid button,.community-close{min-height:46px;border-radius:11px;border:1.5px solid rgba(120,190,220,.42);background:rgba(64,130,170,.16);color:#eaf5fb;font-size:11px;font-weight:850;padding:8px;cursor:pointer;}
+.community-action-grid .okay{border-color:rgba(0,224,150,.45);background:rgba(0,224,150,.12);color:#8ff5cd;}
+.community-disclaimer{font-size:10px;line-height:1.5;color:#9fc4dd;margin:11px 2px;}
+.community-close{width:100%;background:rgba(255,255,255,.08);}
+.settings-community{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}.settings-community>div{flex:1}.settings-community button{min-width:74px;min-height:38px;border-radius:10px;border:1.5px solid rgba(54,211,198,.55);background:rgba(54,211,198,.12);color:#43ddd0;font-weight:900;cursor:pointer;}
+@media(max-width:380px){.community-secondary-grid,.community-action-grid{grid-template-columns:1fr}.community-level{grid-template-columns:1fr}.community-panel{padding:11px}}
 /* Panic escalation controls rendered INTO the beacon overlay (over the flashing bg) */
 .beacon-panic{position:relative;z-index:2;width:100%;max-width:340px;display:none;flex-direction:column;align-items:center;gap:12px;}
 .beacon-ov.panic-mode .beacon-content{display:none;}

@@ -30,7 +30,7 @@
 <link href="assets/life-companion.css" rel="stylesheet"/>
 <meta content="TotaVivo Life Companion" name="application-name"/>
 <meta content="totavivo-life-companion" name="tota-group-module"/>
-<meta content="8.3.6" name="tota-group-version"/>
+<meta content="8.3.7" name="tota-group-version"/>
 </head>
 <body class="deep shape-rounded">
 <a aria-label="Open Tota Group" class="tota-group-link" href="../../index.html" title="Tota Group">Tota Group</a>
@@ -205,6 +205,11 @@
 <div class="panic-cardttl">What will happen — right now</div>
 <div id="panic-loadout"></div>
 </div>
+<div class="panic-card community-entry">
+<div class="panic-cardttl">Community Safety — Nationwide</div>
+<div class="community-entry-copy">Review official U.S. registry information for any address. Registry records are not live tracking and do not by themselves mean someone is an immediate threat.</div>
+<button class="community-primary" onclick="openCommunitySafety('information')">🗺️ Check the Nationwide Registry</button>
+</div>
 <button aria-label="Press and hold to sound the safety alarm" class="panic-fire" id="panic-fire">
 <span class="pf-fill" id="panic-fill"></span>
 <span class="pf-label" id="panic-fire-label">🛡️ Press &amp; HOLD to sound the alarm</span>
@@ -219,6 +224,34 @@
 <button class="panic-practice" id="guardian-premium-btn" onclick="joinGuardianWaitlist()" style="width:100%;color:var(--tv-deep-blue);background:linear-gradient(135deg,var(--tv-gold),var(--tv-gold-bright));border:none">🔔 Join the Premium waitlist</button>
 </div>
 <button class="panic-about" onclick="closeGuardian();showAboutTotaVivo()">ℹ️ About TotaVivo &amp; version</button>
+</div>
+</div>
+<!-- COMMUNITY SAFETY — official registry links and honest risk levels -->
+<div aria-label="Community Safety registry information" aria-modal="true" class="community-ov" id="community-ov" role="dialog">
+<div class="community-panel">
+<div class="community-hd">
+<div><div class="community-kicker">🛡️ COMMUNITY SAFETY</div><div class="community-title">Official Registry Check</div></div>
+<button aria-label="Close Community Safety" class="modal-x" onclick="closeCommunitySafety()" title="Close">✕</button>
+</div>
+<div class="community-status" id="community-status" data-level="information"></div>
+<div class="community-notice"><b>Community Safety Notice</b><br/>Registered offender information may be reported near a searched location. This information is based on reported registry addresses, not live tracking. Review the official registry before making safety decisions.</div>
+<div class="community-levels" aria-label="Community Safety alert levels">
+<div class="community-level info" data-level="information"><b>Information</b><span>Official registry checking is available for the address you choose.</span></div>
+<div class="community-level caution" data-level="caution"><b>Caution</b><span>Use only when an official registry reports records within the searched area.</span></div>
+<div class="community-level immediate" data-level="immediate"><b>Immediate Safety</b><span>Use only for present danger signals or an emergency, never from a registry listing alone.</span></div>
+</div>
+<button class="community-primary nationwide" onclick="openRegistry('national')">🇺🇸 Open Nationwide DOJ Registry</button>
+<div class="community-secondary-grid">
+<button onclick="openRegistry('florida')">Open Florida FDLE Registry</button>
+<button onclick="openBothRegistries()">Open Both Registries</button>
+</div>
+<div class="community-action-grid">
+<button class="okay" onclick="communityImOkay()">✓ I’m Okay</button>
+<button onclick="communityCallFamily()">☎ Call Family</button>
+<button onclick="communityOpenGuardian()">🛡️ Open Guardian</button>
+</div>
+<div class="community-disclaimer">A registry listing is not proof that a person is at the searched location now or poses an immediate danger. In an emergency, move to a safer place and call 911.</div>
+<button class="community-close" onclick="closeCommunitySafety()">Close</button>
 </div>
 </div>
 <!-- ADD APP PROMPT -->
@@ -985,6 +1018,10 @@
 <!-- FALL DETECTION — ENHANCED -->
 <div class="fall-settings-card">
 <div class="ct" style="color:var(--red)">🆘 Fall Detection &amp; Emergency Plan</div>
+<div class="settings-community">
+<div><div class="tl3">🛡️ Community Safety — Nationwide</div><div class="ts2">Open the official U.S. Department of Justice registry for any address nationwide.</div></div>
+<button onclick="openCommunitySafety('information')">Check</button>
+</div>
 <div class="tog-row"><div><div class="tl3">🎙️ Fall Sound Detection</div><div class="ts2">Listens for impact sounds</div></div><div class="tog" id="tog-fall" onclick="toggleFall(this)"></div></div>
 <button class="bb gl" onclick="testFall()" style="margin-top:6px;margin-bottom:6px;min-height:40px;font-size:11px"><div class="f"></div><span>🧪 Test Fall Detection (Demo)</span></button>
 <div class="tog-row"><div><div class="tl3">🔔 Loud Alarm Between Attempts</div><div class="ts2">Alarm sounds between each try to reach you</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>

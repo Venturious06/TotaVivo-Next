@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.6';
+var APP_VERSION='8.3.7';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -1318,6 +1318,41 @@ function closeGuardian(){
   if(panic.autoClose){clearTimeout(panic.autoClose);panic.autoClose=null;}
   if(panic.wake){try{panic.wake.release();}catch(e){}panic.wake=null;}
 }
+
+// Community Safety uses official registry pages. It never turns an address record
+// into a live-location or immediate-danger claim.
+var COMMUNITY_REGISTRIES={
+  national:'https://www.nsopw.gov/?lang=EN',
+  florida:'https://offender.fdle.state.fl.us/offender/sops/offenderSearch.jsf?wantedInd=true'
+};
+function openCommunitySafety(level){
+  var ov=document.getElementById('community-ov');var status=document.getElementById('community-status');
+  if(!ov||!status)return;
+  level=(level==='caution'||level==='immediate')?level:'information';
+  var copy={
+    information:'Information: Use the official nationwide registry to check an address in any U.S. state or territory.',
+    caution:'Caution: Official registry records may be reported in the area you searched. Review the source details before making safety decisions.',
+    immediate:'Immediate Safety: This level is only for present danger signals or an emergency. A registry listing alone never activates it.'
+  };
+  status.dataset.level=level;status.textContent=copy[level];ov.classList.add('show');ov.scrollTop=0;
+  if(typeof logEvent==='function')logEvent('community_safety_opened',{level:level});
+}
+function closeCommunitySafety(){var ov=document.getElementById('community-ov');if(ov)ov.classList.remove('show');}
+function openRegistry(which){
+  var url=COMMUNITY_REGISTRIES[which]||COMMUNITY_REGISTRIES.national;
+  var win=window.open(url,'_blank');if(win)win.opener=null;
+  if(!win)showToast('Please allow the official registry page to open');
+  if(typeof logEvent==='function')logEvent('official_registry_opened',{registry:which||'national'});
+}
+function openBothRegistries(){
+  var first=window.open(COMMUNITY_REGISTRIES.national,'_blank');if(first)first.opener=null;
+  var second=window.open(COMMUNITY_REGISTRIES.florida,'_blank');if(second)second.opener=null;
+  if(!first||!second)showToast('Your browser may allow one page at a time. Use the two registry buttons.');
+  if(typeof logEvent==='function')logEvent('official_registry_opened',{registry:'national_and_florida'});
+}
+function communityImOkay(){closeCommunitySafety();showToast('✓ Glad you’re okay');if(typeof logEvent==='function')logEvent('community_safety_okay');}
+function communityCallFamily(){closeCommunitySafety();switchTab('phone');showToast('Choose a family contact to call');}
+function communityOpenGuardian(){closeCommunitySafety();openGuardian();}
 function armPanicAutoClose(){
   if(panic.autoClose)clearTimeout(panic.autoClose);
   panic.autoClose=setTimeout(function(){
@@ -4771,6 +4806,7 @@ var SEARCH_INDEX=[
   {ico:'🆘',label:'Emergency / Call 911 / Find-Me Beacon',kw:'911 emergency help beacon sos flash alarm find me',go:()=>switchTab('phone')},
   {ico:'🚗',label:'Accident Assistant — send help and claim checklist',kw:'accident crash collision claim insurance send help roadside',go:()=>switchTab('accident')},
   {ico:'🛡️',label:'Personal Safety Alarm (Vivo Guardian)',kw:'panic duress safety alarm siren guardian attack unsafe walking public defend protect wife grandkids',go:()=>openGuardian()},
+  {ico:'🇺🇸',label:'Community Safety — Nationwide Registry',kw:'community safety nationwide national doj nsopw registry offender warning neighborhood address florida fdle',go:()=>openCommunitySafety('information')},
   {ico:'💊',label:'Medications',kw:'medicine meds pills prescription drug refill',go:()=>switchTab('medicine')},
   {ico:'🏷️',label:'Scan a Barcode or QR Code',kw:'scan barcode qr code medicine bottle reader',go:()=>openCodeScanner()},
   {ico:'📧',label:'Email',kw:'email mail gmail inbox message',go:()=>switchTab('email')},

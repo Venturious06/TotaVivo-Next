@@ -4,7 +4,7 @@
   var state=Object.create(null), listeners=Object.create(null), modules=Object.create(null);
   function emit(topic,payload){(listeners[topic]||[]).slice().forEach(function(fn){try{fn(payload,topic);}catch(err){if(root.console)console.error(err);}});}
   var api={
-    version:'8.3.6',
+    version:'8.3.7',
     get:function(path,fallback){var cur=state;for(var p of String(path).split('.')){if(cur==null||!Object.prototype.hasOwnProperty.call(cur,p))return fallback;cur=cur[p];}return cur;},
     set:function(path,value){var parts=String(path).split('.'),cur=state;for(var i=0;i<parts.length-1;i++)cur=cur[parts[i]]||(cur[parts[i]]={});cur[parts[parts.length-1]]=value;emit('change:'+path,value);emit('change',{path:path,value:value});return value;},
     patch:function(path,values){var current=this.get(path,{});var next=Object.assign({},current,values||{});return this.set(path,next);},

@@ -1,0 +1,13 @@
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'apps/totavivo/life-companion.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'apps/totavivo/assets/life-companion.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'apps/totavivo/assets/life-companion.css'),'utf8');
+['Open Nationwide DOJ Registry','Open Florida FDLE Registry','Open Both Registries','I’m Okay','Call Family','Open Guardian'].forEach(text=>assert(html.includes(text),text));
+['data-level="information"','data-level="caution"','data-level="immediate"','not live tracking'].forEach(text=>assert(html.includes(text),text));
+assert(js.includes('https://www.nsopw.gov/?lang=EN'),'official nationwide DOJ registry');
+assert(js.includes('offender.fdle.state.fl.us'),'official Florida registry');
+assert(js.includes('A registry listing alone never activates it.'),'registry does not create immediate-danger alert');
+assert(!html.includes('Dangerous offender detected nearby'),'no unsupported live-danger claim');
+assert(css.includes('.community-ov'),'Community Safety dialog styling');
+console.log('Community Safety tests passed');
