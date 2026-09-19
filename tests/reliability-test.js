@@ -1,0 +1,18 @@
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'apps/totavivo/life-companion.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'apps/totavivo/assets/core/reliability.js'),'utf8');
+const app=fs.readFileSync(path.join(root,'apps/totavivo/assets/life-companion.js'),'utf8');
+const sw=fs.readFileSync(path.join(root,'apps/totavivo/sw.js'),'utf8');
+const sql=fs.readFileSync(path.join(root,'supabase/migrations/20260919_app_telemetry.sql'),'utf8');
+assert(html.includes('assets/core/reliability.js'),'reliability layer is loaded');
+assert(html.includes('Check for Updates Now'),'real in-app update action is visible');
+assert(js.includes("addEventListener('error'"),'window crashes are captured');
+assert(js.includes("addEventListener('unhandledrejection'"),'promise crashes are captured');
+assert(js.includes('MAX_QUEUE=250'),'offline queue is bounded');
+['name|email|phone|address|location|lat|lng|med|message|record|contact|amount|balance|password|token|secret','!navigator.onLine','app_telemetry'].forEach(x=>assert(js.includes(x),x));
+assert(app.includes('TotaReliability.track'),'app events reach sanitized telemetry');
+assert(sw.includes('assets/core/reliability.js'),'reliability layer is available offline');
+assert(sql.includes('enable row level security'),'telemetry uses RLS');
+assert(sql.includes('for insert'),'clients only receive an insert policy');
+console.log('Reliability, analytics, update and offline tests passed');

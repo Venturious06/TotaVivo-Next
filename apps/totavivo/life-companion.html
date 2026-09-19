@@ -30,9 +30,10 @@
 <link href="assets/life-companion.css" rel="stylesheet"/>
 <meta content="TotaVivo Life Companion" name="application-name"/>
 <meta content="totavivo-life-companion" name="tota-group-module"/>
-<meta content="8.3.7" name="tota-group-version"/>
+<meta content="8.3.8" name="tota-group-version"/>
 </head>
 <body class="deep shape-rounded">
+<div aria-live="polite" class="network-status" id="network-status"></div>
 <a aria-label="Open Tota Group" class="tota-group-link" href="../../index.html" title="Tota Group">Tota Group</a>
 <!-- ═══ Color-vision simulation filters (hidden) ═══
      Compact SVG matrix approximations for comparing common color-vision deficiencies. -->
@@ -1089,7 +1090,7 @@
 <div class="recording-note">Recordings remain in this TotaVivo session and are used only when you choose them.</div>
 </div>
 <div class="card"><div class="ct">🔤 Text Size</div><div class="frow"><span>A</span><input class="fsl" max="135" min="90" oninput="document.body.style.fontSize=this.value+'%'" type="range" value="100"/><span style="font-size:18px">A</span></div></div>
-<div class="card"><div class="ct">☁️ Updates</div><div class="tog-row"><div><div class="tl3">Auto-install after countdown</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div><div class="tog-row"><div><div class="tl3">Show my changes in update screen</div><div class="ts2">Your saved changes appear in the update notes</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div><button class="bb gm" onclick="showUpdate()" style="margin-top:7px;margin-bottom:0"><div class="f"></div><span>☁️ Check for Updates</span></button></div>
+<div class="card"><div class="ct">☁️ Updates &amp; Reliability</div><div class="tog-row"><div><div class="tl3">Automatic update checks</div><div class="ts2">Checks when TotaVivo opens, returns to the screen, and every 15 minutes while online</div></div><div class="tog on" aria-label="Automatic update checks are on"></div></div><div class="tog-row"><div><div class="tl3">Offline protection</div><div class="ts2">Your on-device information remains available; technical reports wait safely until the connection returns</div></div><div class="tog on" aria-label="Offline protection is on"></div></div><button class="bb gm" onclick="startUpdate()" style="margin-top:7px;margin-bottom:0"><div class="f"></div><span>☁️ Check for Updates Now</span></button></div>
 <!-- COPYRIGHT / TRADEMARK FOOTER -->
 <div style="text-align:center;padding:14px 8px 6px;font-size:10px;color:var(--sub);line-height:1.6">
 <div style="font-weight:800;color:var(--tv-gold-bright);letter-spacing:.3px">TotaVivo™</div>
@@ -1630,6 +1631,7 @@
 </div><!-- end phone-shell -->
 <script src="assets/core/storage.js"></script>
 <script src="assets/core/state.js"></script>
+<script src="assets/core/reliability.js"></script>
 <script src="assets/modules/medications.js"></script>
 <script src="assets/modules/safety.js"></script>
 <script src="assets/modules/integrations.js"></script>

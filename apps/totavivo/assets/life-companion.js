@@ -2,7 +2,7 @@
 // ═══ GLOBALS ═══
 // ── App version ── bump this one constant on each release. Format: major.minor for
 //   feature releases (7.3, 7.4…), add a third number for small updates (7.3.1, 7.3.2…).
-var APP_VERSION='8.3.7';
+var APP_VERSION='8.3.8';
 var swRegistration=null;
 var swReloading=false;
 var slowTap=true,curContact='Susan',lastAction=null,undoTimer=null;
@@ -534,6 +534,7 @@ function syncContacts(){showToast('📱 Syncing…');setTimeout(()=>{allContacts
 var SYNC_URL='https://ajnrdsikcoudpixcyycr.supabase.co';
 var SYNC_KEY='sb_publishable_gUpBw1odBA2MdcTsyDufTA_IoPzc0ej';
 var syncClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SYNC_URL,SYNC_KEY):null;
+if(window.TotaReliability)window.TotaReliability.configure({client:syncClient,version:APP_VERSION});
 var SYNC_STATE_KEY='totavivo_sync_v1';
 var syncState={linked:false,userId:null,email:null,householdId:null,role:null};
 var pendingSyncEmail='';
@@ -3640,6 +3641,8 @@ function logEvent(name,props){
   }catch(e){}
   // Update timing markers
   lastEventTime[name]=ev.t;
+  // Technical analytics are sanitized and queued offline by the reliability layer.
+  if(window.TotaReliability)window.TotaReliability.track(name,props||{});
   // Forward to IFTTT
   if(instrSettings.sendToIft&&typeof fireIft==='function'&&typeof iftKey!=='undefined'&&iftKey){
     try{fireIft('tv_'+name,JSON.stringify(props||{}),sessionId);}catch(e){}

@@ -9,7 +9,7 @@ assert(js.includes('renderPriorityModules'));
 assert(js.includes('reg.update()'),'real service-worker update check');
 assert(js.includes('caches.delete'),'old app cache cleanup');
 assert(!js.includes('pct+=Math.random'),'simulated updater removed');
-assert(sw.includes('totavivo-v8.3.7'),'service-worker cache version');
+assert(sw.includes('totavivo-v8.3.8'),'service-worker cache version');
 assert(sw.includes('updateCritical'),'network-first app files');
 assert(html.includes('icon-192-v834.png'),'visible logo uses a cache-proof filename');
 assert(html.includes('Interface Shape'),'honest interface-wide shape label');

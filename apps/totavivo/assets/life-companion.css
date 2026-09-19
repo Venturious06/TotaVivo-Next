@@ -208,6 +208,8 @@ body.light .screen{background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rg
 body.warm .screen{background:linear-gradient(180deg,rgba(255,204,85,.09) 0%,rgba(55,28,0,.06) 42%,rgba(12,5,0,.30) 100%);}
 body.cb .screen{background:linear-gradient(180deg,rgba(77,184,255,.11) 0%,rgba(0,32,96,.06) 42%,rgba(0,7,35,.30) 100%);}
 body.big-text .screen{zoom:1.18;}
+.network-status{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:2200;display:none;transform:translateX(-50%);max-width:min(92vw,430px);padding:8px 12px;border-radius:8px;background:#163b55;border:1px solid rgba(80,190,220,.55);color:#dff7ff;font-size:11px;font-weight:800;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.35);}
+.network-status.show{display:block}.network-status.offline{background:#513d12;border-color:#ffd166;color:#fff0b8;}
 .screen::-webkit-scrollbar{width:3px;}
 .screen::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .card{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:11px;margin-bottom:8px;}
