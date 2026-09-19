@@ -23,7 +23,7 @@ on public.app_telemetry for insert
 to anon, authenticated
 with check (
   event_kind in ('analytics','crash')
-  and jsonb_object_length(details) <= 20
+  and octet_length(details::text) <= 4096
 );
 
 create index if not exists app_telemetry_received_at_idx on public.app_telemetry(received_at desc);
